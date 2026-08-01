@@ -1,0 +1,6 @@
+[submodule "tempest2k"]
+	path = tempest2k
+	url = https://github.com/mwenge/tempest2k
+[submodule "shrinko8"]
+	path = shrinko8
+	url = https://github.com/thisismypassport/shrinko8

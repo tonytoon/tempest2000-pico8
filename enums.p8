@@ -1,0 +1,85 @@
+-- object types
+--[[const]] FLIPPER   = 1
+--[[const]] TANKER    = 2
+--[[const]] SPIKER    = 3
+--[[const]] FUSEBALL  = 4
+--[[const]] PULSAR    = 5
+--[[const]] FUTANKER  = 6
+--[[const]] PUTANKER  = 7
+--[[const]] SFLIPPER2 = 8
+--[[const]] MIRROR    = 9
+--[[const]] UFO    = 10
+--[[const]] BEAST     = 11
+--[[const]] SFLIPPER3 = 12
+
+--[[const]] CLAW      = 13
+--[[const]] PSHOT = 14
+--[[const]] SUPERZAPPER = 15
+
+--[[const]] ESHOT = 16
+--[[const]] SPIKE = 17
+--[[const]] POWERUP = 18
+--[[const]] EXPLOSION = 19
+--[[const]] SPARK = 20
+--[[const]] SPLATTER = 21
+--[[const]] DROID = 23
+--[[const]] PLASER = 24
+--[[const]] PART_RING = 25
+--[[const]] BSHOT = 27
+--[[const]] PLAYER = 28
+--[[const]] ENEMY = 29
+--[[const]] PUFX = 30
+
+-- game states
+--[[const]] G_ACTIVE  = 12
+--[[const]] G_GAMEOVER = 13
+--[[const]] G_ENTER = 14
+--[[const]] G_LEAVING = 15
+--[[const]] G_WARP = 16
+--[[const]] G_DEADMESSAGE = 17
+--[[const]] G_MENU = 18
+--[[const]] G_COMPLETE = 19
+
+-- game menus
+--[[const]] M_MAIN = 1
+--[[const]] M_STAGE_SELECT = 2
+--[[const]] M_OPTIONS = 3
+--[[const]] M_DATA = 4
+
+-- object states
+--[[const]] WEB = 65
+--[[const]] ALIVE = 66
+--[[const]] EDGE = 67
+--[[const]] DEAD = 69
+--[[const]] FLIP = 70
+--[[const]] SNATCH = 72
+--[[const]] ZAP = 73
+--[[const]] DESCEND = 76
+--[[const]] SPAWN = 78
+--[[const]] CROSS = 80
+--[[const]] APPROACH = 81
+
+-- other assorted enums
+--[[const]] PU_LASER = 256
+--[[const]] PU_JUMP = 257
+--[[const]] PU_DROID = 258
+--[[const]] PU_SURPRISE = 259
+--[[const]] PU_SZ_WARP = 260
+
+-- palette colors
+--[[const]] COL_BLACK = 0
+--[[const]] COL_GREY = 1
+--[[const]] COL_LIGHT_GREY = 2
+--[[const]] COL_WHITE = 3
+--[[const]] COL_YELLOW = 4
+--[[const]] COL_CYAN = 5
+--[[const]] COL_GREEN = 6
+--[[const]] COL_PURPLE = 7
+--[[const]] COL_BLUE = 8
+--[[const]] COL_FLIPPER = 9
+--[[const]] COL_FLIPPER_ACCENT = 10
+--[[const]] COL_WEB_SPOKES = 11
+--[[const]] COL_WEB1 = 12
+--[[const]] COL_WEB2 = 13
+--[[const]] COL_CYCLE_COOL = 14
+--[[const]] COL_CYCLE_HOT = 15
