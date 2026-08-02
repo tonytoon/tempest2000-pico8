@@ -52,6 +52,7 @@ function update_view()
 end
 
 function draw_web()
+	if not game_outline_visible then return end
 	gpu_draw(near_shape)
 	gpu_draw(far_shape)
 	web_spokes.cmds[1][2]=oneup_timer>0 and 15 or COL_WEB_SPOKES
@@ -87,9 +88,7 @@ function towards_pos(source,target,closed)
 	if closed then
 		distance=(distance+num_lanes/2)%num_lanes-num_lanes/2
 	end
-	if distance<0 then return -1 end
-	if distance>0 then return 1 end
-	return 0
+	return distance<0 and -1 or distance>0 and 1 or 0
 end
 
 t2k_webs={

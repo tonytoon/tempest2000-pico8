@@ -100,6 +100,7 @@ function aspect_point(x,y)
 end
 
 function set_crt_adjust()
+	poke(0x5f2c,tate_mode~=0 and tate_mode+132 or 0)
 	display_aspect_x=crt_adjust and 3/4 or 1
 	display_aspect_y=crt_adjust and 15/16 or 1
 end

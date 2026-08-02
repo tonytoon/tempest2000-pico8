@@ -92,7 +92,7 @@ function draw_world_line(ax,ay,az,bx,by,bz,col)
 	end
 	local x1,y1=project_camera(ax,ay,az)
 	local x2,y2=project_camera(bx,by,bz)
-	line(x1,y1,x2,y2,col)
+	aline(x1,y1,x2,y2,col)
 end
 
 -- project world web coordinates to screen coordinates

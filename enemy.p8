@@ -363,8 +363,7 @@ function flipper_flip(self)
         self.dir=self.dir
 			or towards_pos(self.pos,player.pos,game_active_web.closed)
         if self.super_run then self.dir=-self.dir end
-        self.flip_lane=lane(self.pos)
-        self.web_flip=self.depth>0
+        self.flip_lane,self.web_flip=lane(self.pos),self.depth>0
     end
 
     self.flip_frame+=1
@@ -382,15 +381,13 @@ function flipper_flip(self)
 
     self.pos+=self.dir/frames
 
-    self.lethal=self.flip_frame<=frames*.6 and not self.tanker_child
-    self.killable=self.flip_frame>frames*.6
+    local past_peak=self.flip_frame>frames*.6
+    self.lethal,self.killable=not past_peak and not self.tanker_child,past_peak
     if self.flip_frame<frames then return end
     sfx(38)
-    self.flip_frame=0
-    self.dir=false
-    self.flip_lane=nil
-    self.lethal=true
-    self.killable=true
+    self.flip_frame,self.dir,self.flip_lane,self.lethal,self.killable=0,false,nil,true,true
+	-- scarper is a real word used in britain that means to run away or flee
+	-- used in the jaguar source so i kept it because i like it
     if self.scarper and self.scarper!=0 then
         self.dir=sgn(self.scarper)
         self.scarper-=self.dir

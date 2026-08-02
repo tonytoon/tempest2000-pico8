@@ -4,7 +4,7 @@ file,w_cmds.txt,1182,0x049E,371
 file,o_verts.txt,1553,0x0611,2536
 file,o_cmds.txt,4089,0x0FF9,2264
 file,t_verts.txt,6353,0x18D1,816
-file,object_defs.txt,7169,0x1C01,715
+file,object_defs.txt,7169,0x1C01,912
 file,w_meta.txt,8192,0x2000,683
 file,waves.txt,8875,0x22AB,1978
 file,t_cmds.txt,10853,0x2A65,1083

@@ -11,4 +11,4 @@ cd "$project_dir"
 	--merge music.txt music p8 \
 	--merge sfx.txt sfx p8 \
 	--label cart_label.png \
-	--minify -c
+	--minify -ob -c

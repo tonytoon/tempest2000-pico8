@@ -33,7 +33,6 @@ OBJECT_FIELDS = (
     "invuln",
     "flip_wait",
     "shoots",
-    "scale_y",
     "health",
     "duration",
     "start_scale",
@@ -46,7 +45,7 @@ OBJECT_FIELDS = (
 )
 OBJECT_BOOL_FIELDS = {"active", "pierce", "invuln", "shoots", "super_run"}
 OBJECT_128_FIELDS = {"zspeed"}
-OBJECT_256_FIELDS = {"scale_y", "start_scale", "end_scale"}
+OBJECT_256_FIELDS = {"start_scale", "end_scale"}
 OBJECT_FIXED_FIELDS = {"rot", "rot_speed"}
 
 
@@ -485,13 +484,17 @@ def pack_file(path: Path, address: int) -> PackedFile:
         if packed.prefix == "S":
             # Message data lives in a Lua string: it costs characters, but almost
             # no PICO-8 tokens and requires no byte-by-byte decoder.
-            if len(fields) != 5:
+            # Plain text (no x,y,hold,exit) is allowed for messages that never setmsg/drawmsg.
+            if len(fields) == 1:
+                packed.messages.append(fields[0].replace(r"\n", "|"))
+            elif len(fields) == 5:
+                parse_numbers(path, entry.line_number, fields[:4])
+                packed.messages.append(",".join(fields[:4] + [fields[4].replace(r"\n", "|")]))
+            else:
                 raise ValueError(
                     f"{path}:{entry.line_number}: "
-                    "message data needs x,y,hold,exit,text"
+                    "message data needs x,y,hold,exit,text or just text"
                 )
-            parse_numbers(path, entry.line_number, fields[:4])
-            packed.messages.append(",".join(fields[:4] + [fields[4].replace(r"\n", "|")]))
         else:
             record = pack_record(
                 path, entry.line_number, fields, packed.prefix == "W"
@@ -633,6 +636,15 @@ def write_enums(path: Path, files: list[PackedFile]) -> None:
         if item.prefix is not None
         for label in item.labels
     ]
+
+    lines += ["", "-- difficulty curve addresses (50 bytes each, indexed by (stage-1)\\2)"]
+    for item in files:
+        if item.object_defs is None:
+            continue
+        curve_addr = item.address + 2
+        for name in item.object_defs.curves:
+            lines.append(const(f"CURVE_{name}", f"0x{curve_addr:04X}"))
+            curve_addr += 50
 
     lines += [
         "",

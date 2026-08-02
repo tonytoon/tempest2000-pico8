@@ -1,13 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
---[tempest 2000 0.9.2]
+--[tempest 2000 0.9.4]
 --by [deepthaw]
 --[[const]] game_stage_max=99
 #include enums.p8
-#include difficulty.p8
 #include colors.p8
 #include packed_data.p8
+#include difficulty.p8
 #include gpu.p8
 #include camera.p8
 #include math.p8
@@ -26,16 +26,40 @@ __lua__
 
 -- enabled,sensitivity,max lanes,jump. the numbers are indexes to save tokens:
 -- sensitivity/max=(value+1)/4 and jump=value*10 (0 means off)
-mouse_opts={false,3,9,0}
-crt_adjust=false
 menu_selection=1
 reset_confirm=false
-game_regular_high_stage=1
-game_beastly_high_stage=1
+game_cart_name="tempest2000v093"
 
--- initialization-only code stays native to avoid bytecode wrapper overhead
-function init_scores()
-	cartdata("tempest2000v092")
+tate_names={
+	"off",
+	"cw",
+	"flip",
+	"ccw"
+}
+
+-- dget(6)/dset(6) settings word bit layout (kept non-overlapping, see save_settings/load_init_data):
+--   bit 0      mouse enabled
+--   bits 1-4   mouse sensitivity (0-15)
+--   bits 5-8   mouse max lanes (0-15)
+--   bits 9-11  mouse jump (0-7)
+--   bit 12     crt adjust
+--   bit 13     web outline visible
+--   bits 14-15 tate mode (0-3)
+-- dget(47)/dset(47) is beastly high stage (0-99), kept unpacked to avoid bit-shift bugs
+function reset_settings()
+	mouse_opts={false,3,9,0}
+	crt_adjust=false
+	tate_mode=0
+	game_outline_visible=true
+	game_regular_high_stage=1
+	game_beastly_high_stage=1
+	game_beastly_unlocked=false
+	set_crt_adjust()
+end
+reset_settings()
+
+function load_and_init_data()
+	cartdata(game_cart_name)
 	hs,hsn={},{}
 	for i=0,4 do add(hs,dget(i)) end
 	for i=7,46 do add(hsn,dget(i)) end
@@ -46,11 +70,13 @@ function init_scores()
 	game_regular_high_stage=mid(1,p&127,game_stage_max)
 	game_beastly_unlocked=p>=128
 	p=dget(6)
-	if p>0 then
+	if p~=0 then
 		mouse_opts={(p&1)>0,p>>1&15,p>>5&15,p>>9&7}
 		crt_adjust=(p&0x1000)>0
-		game_beastly_high_stage=mid(1,p>>13,game_stage_max)
+		tate_mode=(p&0xc000)>>>14
+		game_outline_visible=(p&0x2000)>0
 	end
+	game_beastly_high_stage=mid(1,dget(47),game_stage_max)
 	if game_beastly_unlocked then
 		game_regular_high_stage=game_stage_max
 	end
@@ -63,16 +89,6 @@ function save_data()
 	save_settings()
 end
 
-function crt_menu()
-	menuitem(1,"crt adjust:"..(crt_adjust and"on"or"off"),function()
-		crt_adjust=not crt_adjust
-		set_crt_adjust()
-		save_settings()
-		crt_menu()
-		return true
-	end)
-end
-
 function save_settings()
 	dset(5,game_regular_high_stage|(game_beastly_unlocked and 128 or 0))
 	dset(6,(mouse_opts[1] and 1 or 0)
@@ -80,17 +96,13 @@ function save_settings()
 		|mouse_opts[3]<<5
 		|mouse_opts[4]<<9
 		|(crt_adjust and 0x1000 or 0)
-		|(game_beastly_high_stage<<13))end
+		|(tate_mode&3)<<14
+		|(game_outline_visible and 0x2000 or 0))
+	dset(47,game_beastly_high_stage)
+end
 
 function reset_data()
-	game_regular_high_stage=1
-	game_beastly_high_stage=1
-	game_beastly_unlocked=false
-	mouse_opts={false,3,9,0}
-	crt_adjust=false
-	set_crt_adjust()
-	display_aspect_x=1
-	display_aspect_y=1
+	reset_settings()
 	hs={
 		0xa.6040, -- 680000
 		0x7.d000, -- 512000
@@ -141,7 +153,6 @@ function unlock_beastly_from_high_score_name()
 end
 
 messages = {}
---$switch-compiler: none
 function add_message(msg)
 	msg=get_message(msg)
 	msg[3]+=msg[4]
@@ -210,10 +221,9 @@ function _init()
 	init_spawn_data()
 	init_shapes()
 	init_tempest_logo()
-	init_scores()
+	load_and_init_data()
 	game_beastly=false
 	init_game()
-	crt_menu()
 	poke(0x5f2d,mouse_opts[1] and 5 or 0)
 end
 --$switch-compiler: parens8
@@ -277,7 +287,7 @@ function menu_items()
 		return game_beastly_unlocked and "start game,beastly game,options,data"
 			or "start game,options,data"
 	elseif game_menu==M_OPTIONS then
-		return "mouse,sensitivity,max lanes,jump,crt adjust"
+		return "mouse,sensitivity,max lanes,jump,crt adjust,tate mode,web outline"
 	elseif game_menu==M_DATA then
 		return "high scores,reset data"
 	end
@@ -285,7 +295,7 @@ function menu_items()
 end
 
 function menu_y()
-	return game_menu==M_MAIN and 84 or game_menu==M_STAGE_SELECT and 88 or 72
+	return game_menu==M_MAIN and 84 or game_menu==M_STAGE_SELECT and 88 or 56
 end
 
 function menu_move(accept)
@@ -298,9 +308,14 @@ function menu_move(accept)
 	end
 	if game_menu==M_OPTIONS then
 		if btnp(2) or btnp(3) then
-			menu_selection=(menu_selection+(btnp(3) and 0 or -2))%5+1
+			local step=btnp(3) and 1 or -1
+			menu_selection=menu_selection+step
 			if not mouse_opts[1] and menu_selection>1 and menu_selection<5 then
 				menu_selection=btnp(3) and 5 or 1
+			elseif menu_selection<1 then
+				menu_selection=7
+			elseif menu_selection>7 then
+				menu_selection=1
 			end
 			return
 		end
@@ -312,7 +327,11 @@ function menu_move(accept)
 			elseif menu_selection==5 then
 				crt_adjust=not crt_adjust
 				set_crt_adjust()
-				crt_menu()
+			elseif menu_selection==6 then
+				tate_mode=(tate_mode+1)%4
+				set_crt_adjust()
+			elseif menu_selection==7 then
+				game_outline_visible=not game_outline_visible
 			else
 				local i=menu_selection
 				mouse_opts[i]=(mouse_opts[i]+d)%(i<4 and 16 or 6)
@@ -526,7 +545,12 @@ function draw_menu(text,y)
 	for i=1,#menu_text do
 		local s=menu_text[i]
 		if game_menu==M_OPTIONS then
-			s..=" "..(i==1 and (mouse_opts[1] and "on" or "off") or i==5 and (crt_adjust and "on" or "off") or i<4 and ((mouse_opts[i]+1)/4) or mouse_opts[i]>0 and mouse_opts[i]*10 or "off")
+			s..=" "..(i==1 and (mouse_opts[1] and "on" or "off")
+				or i==5 and (crt_adjust and "on" or "off")
+				or i==6 and tate_names[tate_mode+1]
+				or i==7 and (game_outline_visible and "on" or "off")
+				or i<4 and ((mouse_opts[i]+1)/4)
+				or mouse_opts[i]>0 and mouse_opts[i]*10 or "off")
 		end
 		local color=game_menu==M_OPTIONS and i>1 and i<5 and not mouse_opts[1]and COL_GREY or COL_WHITE
 		print(s,x,y+i*8,color)
@@ -549,17 +573,27 @@ function draw_scores()
 		gpu_text(s,18,y+3,1,nil,nil,nil,6)
 		gpu_text(tostr(hs[i],2),76,y+3,1,nil,nil,nil,6)
 	end
-	if hs_pos then print("^",20+(hs_char-1)*4,23+hs_pos*12) end
+	if hs_pos then
+		local cursor_x=18+(hs_char-1)*4
+		local cursor_y=23+hs_pos*12+6
+		print("^",cursor_x,cursor_y)
+	end
+end
+
+function draw_spokes()
+	if game_outline_visible then
+		gpu_draw(web_spokes)
+	end
 end
 
 function draw_stage_select_preview()
 	submit_stars()
 	update_view()
 	for i=1,game_active_web.lanes do
-		apf(lane_quad(i),i%2>0 and COL_WEB1 or COL_WEB2)
+		polyfill(lane_quad(i),i%2>0 and COL_WEB1 or COL_WEB2)
 	end
 	draw_web()
-	gpu_draw(web_spokes)
+	draw_spokes()
 end
 
 function draw_menu_state()
@@ -579,9 +613,9 @@ function draw_menu_state()
 			return
 		end
 		if game_menu==M_MAIN then
-			print(get_message(S_TITLE_CREDIT_1)[5],0,64-adjust_y,COL_WHITE)
-			print(get_message(S_TITLE_CREDIT_2)[5],2,72-adjust_y,COL_WHITE)
-			print(get_message(S_TITLE_CREDIT_3)[5],1,80-adjust_y,COL_WHITE)
+			print(get_message(S_TITLE_CREDIT_1)[1],0,64-adjust_y,COL_WHITE)
+			print(get_message(S_TITLE_CREDIT_2)[1],2,71-adjust_y,COL_WHITE)
+			print(get_message(S_TITLE_CREDIT_3)[1],0,78-adjust_y,COL_WHITE)
 		end
 	end
 
@@ -598,7 +632,7 @@ function draw_game_web()
 		fillp(~(0xffff<<min(16,player.depth/5)),true)
 	end
 	for i=1,game_active_web.lanes do
-		apf(lane_quad(i),i%2>0 and COL_WEB1 or COL_WEB2)
+		polyfill(lane_quad(i),i%2>0 and COL_WEB1 or COL_WEB2)
 	end
 	fillp()
 	draw_web()
@@ -631,7 +665,7 @@ end
 
 function draw_web_effects()
 	if not web_visible then return end
-	gpu_draw(web_spokes)
+	draw_spokes()
 	for i=1,num_lanes do
 		if lane_effects[i] then
 			draw_quad(lane_quad(i),lane_effects[i])
@@ -720,7 +754,7 @@ ce0f8f4f4f4fcfcf8f804040404001118001ce018fc04fc0cf408f8f40cf40cf011180dfdf6090c0
 4f9e9e4f2e000ec02e719ee14f0200e1c07171c0e100024fe19e712ec02cfe3d3dfe2c112cd23de3fee311d2d211e3fee33dd22c111800290c0c290018f329e6
 1cf700e60404e600f70ce629041180a000707000a09f706f009f9f006f709fd060ef00308f3000400000800000120140005000401050100040104000501050cf
 00df00cf10df1000cf10cf00df10df91c08f00bf00cfffcf10409f20cf30df10cf407030401040303091c09fcf9f40ff00500070cf008f10ffef400080704000
-10dfcf3000bf70d0608f00cf0000cf00404000800011808f00cf0000cf00404000800000af0060f0700000cf0040008f7f807f8f90809011800020804000af80
+10dfcf3000bf70d0608f00cf0000cf00404000800011808f00cf0000cf00404000800000af0060f0700000cf0040008fcf80cf8f40804011800020804000af80
 cf8f4000608fcf00eff0709fcf108f70cf704010809f40100011808f8f808f80808f80cfcf40cf4040cf4015828f00cfdfcfff0000df8f20bf00cf000060bf50
 0040ef00007050205030300000ef80cf30ef4000008f00cf30cf100000df8fcfdfefdf000060bf10bf20df00007050500040100000ef8020500040000092417f
 00af60af40df0000af00cf3000606060409000900060af60cf300000600040df00afafafcf7f0092417f00af50af30df0000bf00df3000605060309000900060
@@ -797,19 +831,19 @@ dfefefef20ff301030202020101000ef007030efdf20dfff301201ffdf10df20ef20ff1000ff00ef
 c0968091c036d0e0e0f06221c27113f0d2b082a0e000e09090e000e0b013818313838243225391434123410371f282d212d251a24182618202c252e2a2a25232
 12425182f0b2f0f22143f08311836191c0326151c171f1b112f10232e1e132613211e111716121d121b1d06511a531c56105c105d155129502c5d195222532d4
 f1c48105215221c47285921652361236e1d561d52116f0760186614611163186d1762246620692a5a22592b05041a1e161b141815151719040f4a17551554125
-5191400515253545556575455565758595a5b58595a5b5c5d5e5f58595a5b5c5d5e5f58595a5b5c5d5e5f506162636465666768696040444448484c4c4040444
+5191800515253545556575455565758595a5b58595a5b5c5d5e5f58595a5b5c5d5e5f58595a5b5c5d5e5f506162636465666768696040444448484c4c4040444
 448484c4c40404c4c40505c5c50404c4c40505c5c50404c4c40505c5c50505c5c506064646050586860787088809898686078708880989868607870888098986
 860787088809890a0a8a8a0b0b0b0b8a0b0b8b8b0c0c0c8a0b040404040404448484c4054585c50646054585c5064686c6054585c5064686c6054585c5064686
-c6064686c6074787c78647d1d100009020150030d1004250cc10600400700000800000900000a13000b1d0008033435363738393a35020240030c100500000a0
-0000a1600041e00010b35020140030c100600c10b00080a1600081810010f37010e00020140030c100600420b00840c2a1700011710010644020240030c100b0
-0010a16000710100100460201400600c00b00040d02000910000a1600091b10020231370100100201400600e00b00040d02000e2910000211010105450f09000
-03110800916900a19000f08010103440f0000003916900a1900001c010104450f000000383916900a1900041b0103003132350f0000003213000916900a1a000
-e02020106230b00040914600a15000f03030107240b0004003916900a16000011100004020140021e100913000a1600001500060a2b2c2d2e2f220918c00a1f0
-0061410060a2b2c2d2e2f240203400600800916900a1f000d0404020829230b0002099a18000e06020109430b00010914600a1f00031702060a4b4c4d4e4f430
-b00010914600a1f000c09040107430b000102150009990a010108420b4002099f1310030c324858020140030e1003123004100005108106100a0710000a1f000
-41510010145020140030e100b00030318000a160004221002024e3a020e40030e100600c00d0020031c40041002051000061f820710000a1e00011910010d340
-20140030e100b00010a1e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+c6064686c6074787c786474050606060607070808080808080808080808080a0a0a0a0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0010101
+01010101018080808080808080606060606060606050505050505050504040404040404040303030303030303020208080808080808080404040404040404030
+30303030303030202020202020202010101010101010101010101010101010101080808080706050605040306050403060504030605040306050403030303030
+30303030303030303030303030303030303030d1d100009020150030d1004250cc10600400700000800000900000913000b1d0008033435363738393a3502024
+0030c100500000a0000091600041e00010b35020140030c100600c10b0008091600081810010f37010e00020140030c100600420b00840c29170001171001064
+4020240030c100b00010916000710100100460201400600c00b00040d0200081000091600091b10020231370100100201400600e00b00040d02000e2810000f0
+1010105440f0900003816900919000f08010103440f000000381690091900001c010104450f00000037381690091900041b0103003132350f000000311300081
+690091a000e02020106230b00040814600915000f03030107240b0004003816900916000011100004020140011e10081300091600001500060a2b2c2d2e2f220
+818c0091f00061410060a2b2c2d2e2f24020340060080081690091f000d0404020829230b0002089918000e06020109430b0001081460091f00031702060a4b4
+c4d4e4f430b0001081460091f000c09040107430b000101150008990a010108420b4002089f1310030c324858020140030e1002123003100004108105100a061
+000091f00041510010145020140030e100b000302180009160004221002024e3a020e40030e100600c00d0020021c40031002041000051f82061000091e00011
+910010d34020140030e100b0001091e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

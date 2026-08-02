@@ -130,25 +130,16 @@ function apset(x,y,c)
 	pset(x,y,c)
 end
 
-apv={}
-
-function apf(v,c)
-	for i=1,#v do
-		local p=apv[i]or{}
-		apv[i]=p
-		p[1],p[2]=aspect_point(v[i][1],v[i][2])
-	end
-	for i=#v+1,#apv do apv[i]=nil end
-	polyfill(apv,c)
-end
-
+-- polyfill with subpixel accuracy. used for objects such as lanes and shapes that are not
+-- broken down into triangles. not optimal for triangles - that's why we have the second
+-- function below.
 -- sourced from https://github.com/freds72/picocad-client/blob/master/carts/poly.lua
 function polyfill(v,c)
 	color(c)
 	local p0,spans=v[#v],{}
-	local x0,y0=p0[1],p0[2]
+	local x0,y0=aspect_point(p0[1],p0[2])
 	for i,p1 in inext,v do
-		local x1,y1=p1[1],p1[2]
+		local x1,y1=aspect_point(p1[1],p1[2])
 		local _x1,_y1=x1,y1
 		if(y0>y1) x0,y0,x1,y1=x1,y1,x0,y0
 		local dx=(x1-x0)/(y1-y0)
@@ -170,6 +161,8 @@ function polyfill(v,c)
 	end
 end
 
+--fast triangle fill. not the best, but very few tokens and we're more concerned
+--with speed than quality.
 --sourced from https://www.lexaloffle.com/bbs/?pid=74564
 --@p01
 function p01_triangle_163(x0,y0,x1,y1,x2,y2,col)

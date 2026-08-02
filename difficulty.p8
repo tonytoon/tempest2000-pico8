@@ -14,22 +14,7 @@ end
 --$switch-compiler: parens8
 
 function powerup_delay_for_stage(stage)
-	local s=max(1,stage)
-	if s<3 then
-		return 4
-	elseif s<5 then
-		return 5
-	elseif s<13 then
-		return 6
-	elseif s<17 then
-		return 7
-	elseif s<41 then
-		return 8
-	elseif s<49 then
-		return 10
-	else
-		return 15
-	end
+	return @(CURVE_POWERUP_DELAY+min((max(1,stage)-1)\2,49))
 end
 
 function enemy_shot_limit_for_stage(stage)
@@ -37,92 +22,15 @@ function enemy_shot_limit_for_stage(stage)
 end
 
 function flipper_pause_for_stage(stage)
-	local s=max(1,stage)
-	if s<17 then
-		return 16
-	elseif s<33 then
-		return 8
-	elseif s<49 then
-		return 6
-	elseif s<65 then
-		return 5
-	elseif s<81 then
-		return 4
-	elseif s<97 then
-		return 3
-	else
-		return 2
-	end
+	return @(CURVE_FLIPPER_PAUSE+min((max(1,stage)-1)\2,49))
 end
 
 function fuse_cross_delay_for_stage(stage)
-	local s=max(1,stage)
-	if s<17 then
-		return 8
-	elseif s<33 then
-		return 4
-	elseif s<49 then
-		return 3
-	elseif s<65 then
-		return 2
-	else
-		return 1
-	end
+	return @(CURVE_FUSE_CROSS_DELAY+min((max(1,stage)-1)\2,49))
 end
 
 function pulsar_deadliness_for_stage(stage)
-	local s=max(1,stage)
-	if s<9 then
-		return 8
-	elseif s<11 then
-		return 7
-	elseif s<13 then
-		return 6
-	elseif s<15 then
-		return 5
-	elseif s<17 then
-		return 6
-	elseif s<19 then
-		return 5
-	elseif s<21 then
-		return 4
-	elseif s<23 then
-		return 3
-	elseif s<25 then
-		return 6
-	elseif s<27 then
-		return 5
-	elseif s<29 then
-		return 4
-	elseif s<31 then
-		return 3
-	elseif s<33 then
-		return 6
-	elseif s<35 then
-		return 5
-	elseif s<37 then
-		return 4
-	elseif s<39 then
-		return 3
-	elseif s<41 then
-		return 6
-	elseif s<43 then
-		return 5
-	elseif s<45 then
-		return 4
-	elseif s<47 then
-		return 3
-	elseif s<49 then
-		return 6
-	elseif s<51 then
-		return 5
-	elseif s<53 then
-		return 4
-	elseif s<55 then
-		return 3
-	else
-		return 3
-	end
+	return @(CURVE_PULSAR_DEADLINESS+min((max(1,stage)-1)\2,49))
 end
 
 function wave_superflipper_chance(stage)

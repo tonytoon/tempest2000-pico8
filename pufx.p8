@@ -18,6 +18,7 @@ function test_powerup(o)
         if game_pup_delay < 0 then
             game_pup_delay = game_pup_delay_max
             local p = spawn_object(POWERUP,o)
+            sfx(47)
             p.payload = pu_order[game_pu_order_index]
             
             game_pu_order_index=min(game_pu_order_index+1,#pu_order)

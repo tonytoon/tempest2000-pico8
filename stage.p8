@@ -183,7 +183,7 @@ end
 
 function begin_finish_screen()
 	local message=get_message(game_beastly and S_COMPLETE_BEASTLY or S_COMPLETE_REGULAR)
-	game_complete_message=message[5]
+	game_complete_message=message[1]
 	if not game_beastly then
 		game_beastly_unlocked=true
 		game_regular_high_stage=game_stage_max

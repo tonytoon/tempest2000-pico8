@@ -69,7 +69,6 @@ shapes=V_BEAST3,V_BEAST2
 curve=FLIPPER
 flip_wait=9
 shoots=true
-scale_y=.5
 score=150
 color=COL_FLIPPER
 shapes=V_FLIPPER2
@@ -234,3 +233,29 @@ values=80,84,88,92,96,100,104,108
 values=80,84,88,92,96,100,104,108
 values=96,100,104,108,112,116,120,124
 values=104,116
+
+; standalone curves below have no owning object - referenced directly via
+; CURVE_<NAME>, from difficulty.p8, indexed by min((stage-1)\2,49)
+[curve POWERUP_DELAY]
+values=4,5,6,6,6,6,7,7,8,8,8,8,8,8,8,8
+values=8,8,8,8,10,10,10,10,15,15,15,15,15,15,15,15
+values=15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15
+values=15,15
+
+[curve FLIPPER_PAUSE]
+values=16,16,16,16,16,16,16,16,8,8,8,8,8,8,8,8
+values=6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5
+values=4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3
+values=2,2
+
+[curve FUSE_CROSS_DELAY]
+values=8,8,8,8,8,8,8,8,4,4,4,4,4,4,4,4
+values=3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2
+values=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+values=1,1
+
+[curve PULSAR_DEADLINESS]
+values=8,8,8,8,7,6,5,6,5,4,3,6,5,4,3,6
+values=5,4,3,6,5,4,3,6,5,4,3,3,3,3,3,3
+values=3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+values=3,3

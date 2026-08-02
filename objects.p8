@@ -38,13 +38,7 @@ function draw_object(o)
 	set_affine(scratch_mat,ds,0,x,y)
 
 	mul_affine(scratch_mat,scratch_mat,game_active_web.shape.normals[lane(p)])
-
 	mul_affine(scratch_mat,scratch_mat,o.affine)
-
-	if o.scale_y then
-		scratch_mat[2]*=o.scale_y
-		scratch_mat[5]*=o.scale_y
-	end
 
 	if o.type==UFO and o.cross>=49 then
 		draw_zap(o.pos,o.depth,o.pos,160)
@@ -227,9 +221,9 @@ function init_spawn_data()
 				a+=2
 				if field==6 then
 					value/=128
-				elseif field==11 or field==22 then
+				elseif field==11 or field==21 or field==22 then
 					value*=0x0.0001
-				elseif field==17 or field==20 or field==21 then
+				elseif field==19 or field==20 then
 					value/=256
 				end
 			end
@@ -250,16 +244,15 @@ function init_spawn_data()
 			elseif field==14 then definition.invuln=value
 			elseif field==15 then definition.flip_wait=value
 			elseif field==16 then definition.shoots=value
-			elseif field==17 then definition.scale_y=value
-			elseif field==18 then definition.health=value
-			elseif field==19 then definition.duration=value
-			elseif field==20 then definition.start_scale=value
-			elseif field==21 then definition.end_scale=value
-			elseif field==22 then definition.rot_speed=value
-			elseif field==23 then definition.angle=value
-			elseif field==24 then definition.super_run=value
-			elseif field==25 then definition.score=value
-			elseif field==26 then definition.color=value
+			elseif field==17 then definition.health=value
+			elseif field==18 then definition.duration=value
+			elseif field==19 then definition.start_scale=value
+			elseif field==20 then definition.end_scale=value
+			elseif field==21 then definition.rot_speed=value
+			elseif field==22 then definition.angle=value
+			elseif field==23 then definition.super_run=value
+			elseif field==24 then definition.score=value
+			elseif field==25 then definition.color=value
 			end
 		end
 		spawn_data[object_type]=definition
