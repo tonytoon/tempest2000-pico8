@@ -19,8 +19,7 @@
 --[[const]] cmd_tri  = -8 -- draw filled triangle through three vertices
 
 -- draw a shape to screen with an optional affine transform matrix
-function gpu_draw(shape,m,raw)
-	local raw = raw or nil
+function gpu_draw(shape,m)
 	m=m or identity_mat
 	local out={}
 	for cmd in all(shape.cmds) do
@@ -31,55 +30,37 @@ function gpu_draw(shape,m,raw)
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
-				if not raw then
-					out[1],out[2]=aspect_point(out[1],out[2])
-				end
-				pset(out[1],out[2],col)
+				apset(out[1],out[2],col)
 			end
 		elseif op==cmd_opn or op==cmd_cls then
 			local px,py,fx,fy
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
-				if not raw then
-					out[1],out[2]=aspect_point(out[1],out[2])
-				end
 				local x,y=out[1],out[2]
 				if px then
-					line(px,py,x,y,col)
+					aline(px,py,x,y,col)
 				else
 					fx,fy=x,y
 				end
 				px,py=x,y
 			end
-			if op==cmd_cls then line(px,py,fx,fy,col) end
+			if op==cmd_cls then aline(px,py,fx,fy,col) end
 		elseif op==cmd_tri then
 			local v=shape.verts[cmd[2]]
 			apply_affine(m,v,out)
-			if not raw then
-				out[1],out[2]=aspect_point(out[1],out[2])
-			end
 			local x0,y0=out[1],out[2]
 			v=shape.verts[cmd[3]]
 			apply_affine(m,v,out)
-			if not raw then
-				out[1],out[2]=aspect_point(out[1],out[2])
-			end
 			local x1,y1=out[1],out[2]
 			v=shape.verts[cmd[4]]
 			apply_affine(m,v,out)
-			if not raw then
-				out[1],out[2]=aspect_point(out[1],out[2])
-			end
 			p01_triangle_163(x0,y0,x1,y1,out[1],out[2],col)
 		elseif op==cmd_pol then
 			local vbuf = {}
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
-				if not raw then
-					out[1],out[2]=aspect_point(out[1],out[2])
-				end
 				add(vbuf,{out[1],out[2]})
 			end
 			polyfill(vbuf,col)
@@ -130,6 +111,12 @@ function apset(x,y,c)
 	pset(x,y,c)
 end
 
+function arectfill(x0,y0,x1,y1)
+	x0,y0=aspect_point(x0,y0)
+	x1,y1=aspect_point(x1,y1)
+	rectfill(x0,y0,x1,y1)
+end
+
 -- polyfill with subpixel accuracy. used for objects such as lanes and shapes that are not
 -- broken down into triangles. not optimal for triangles - that's why we have the second
 -- function below.
@@ -137,9 +124,9 @@ end
 function polyfill(v,c)
 	color(c)
 	local p0,spans=v[#v],{}
-	local x0,y0=aspect_point(p0[1],p0[2])
+	local x0,y0=p0[1],p0[2]
 	for i,p1 in inext,v do
-		local x1,y1=aspect_point(p1[1],p1[2])
+		local x1,y1=p1[1],p1[2]
 		local _x1,_y1=x1,y1
 		if(y0>y1) x0,y0,x1,y1=x1,y1,x0,y0
 		local dx=(x1-x0)/(y1-y0)
@@ -151,7 +138,7 @@ function polyfill(v,c)
 		for y=cy0,y1 do
 			local span=spans[y]
 			if span then
-				rectfill(x0,y,span,y)
+				arectfill(x0,y,span,y)
 			else
 				spans[y]=x0
 			end
@@ -180,7 +167,7 @@ function p01_trapeze_h(l,r,lt,rt,y0,y1)
 	if(y0<0)l,r,y0=l-y0*lt,r-y0*rt,0
 	y1=min(y1,128)
 	for y0=y0,y1 do
-		rectfill(l,y0,r,y0)
+		arectfill(l,y0,r,y0)
 		l+=lt
 		r+=rt
 	end

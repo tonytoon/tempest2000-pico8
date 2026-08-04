@@ -287,7 +287,7 @@ function menu_items()
 		return game_beastly_unlocked and "start game,beastly game,options,data"
 			or "start game,options,data"
 	elseif game_menu==M_OPTIONS then
-		return "mouse,sensitivity,max lanes,jump,crt adjust,tate mode,web outline"
+		return "mouse,sensitivity,max lanes,flick jump,crt adjust,tate mode,web outline"
 	elseif game_menu==M_DATA then
 		return "high scores,reset data"
 	end
@@ -386,7 +386,9 @@ function update_dead_message_state()
 		restart_stage_after_death()
 	end
 end
+
 --$switch-compiler: parens8
+
 function update_game_over_state()
 	if hs_pos then
 		local d=btnp(2) and -1 or btnp(3) and 1
@@ -418,7 +420,9 @@ function update_enter_state()
 	player.depth=min(0,player.depth+player.zspeed)
 	if not zoom_active then game_state=G_ACTIVE end
 end
+
 --$switch-compiler: none
+
 function update_play_state()
 	local playing=game_state==G_ACTIVE
 	lane_effects={}
@@ -472,7 +476,7 @@ function update_play_state()
 		check_for_stage_end()
 	end
 end
---$switch-compiler: parens8
+
 function update_warp_state()
 	lane_effects={}
 	update_stars()
@@ -487,11 +491,14 @@ function update_warp_state()
 	end
 end
 
+--$switch-compiler: parens8
+
 function finish_frame_update()
 	finish_object_updates(player_objects)
 	finish_object_updates(world_objects)
 	update_camera(player.pos)
 end
+
 --$switch-compiler: none
 
 function _update60()
@@ -609,7 +616,7 @@ function draw_menu_state()
 			print("this will erase all",26,88,COL_WHITE)
 			print("settings and high scores.",18,96,COL_WHITE)
 			print("are you sure?",38,104,COL_WHITE)
-			print("\142 yes  \151 no",34,116,COL_WHITE)
+			print("\f7\142 delete \f6\151 cancel",28,116)
 			return
 		end
 		if game_menu==M_MAIN then
