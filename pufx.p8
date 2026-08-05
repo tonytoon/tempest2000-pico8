@@ -115,7 +115,6 @@ function update_pufx(self)
     elseif self.state == SPAWN then
         if update_explosion(self) then
             self.state = WEB
-            self.shape = self.shapes[2]
             set_affine(self.affine)
             for i=-2,2 do
                 local r = spawn_object(PART_RING,self)
@@ -128,7 +127,7 @@ function update_pufx(self)
 
         if lane(self.pos)==lane(player.pos) and dz>=0 and dz<=self.collision then
             local e=spawn_object(EXPLOSION,self)
-            e.shape,e.duration,e.end_scale=e.shapes[2],49,3
+            e.color,e.duration,e.end_scale=COL_CYCLE_COOL,49,3
             grant_powerup(self.payload)
             self.active=false
         elseif approach_edge(self) then
@@ -147,4 +146,29 @@ function update_explosion(self)
 		self.angle
 	)
 	return self.wait>=self.duration
+end
+
+function draw_particle_ring(m,n,r,c)
+	for i=0,n-1 do
+		local a=i/n
+		local x,y=r*cos(a),r*sin(a)
+		apset(x*m[1]+y*m[2]+m[3],x*m[4]+y*m[5]+m[6],c)
+	end
+end
+
+function draw_explosion(o,m)
+	if o.type==PART_RING then
+		draw_particle_ring(m,12,10,o.color)
+		return
+	end
+	local tanker=o.tanker_explosion
+	-- yak.s draw_prex/pring2: three rings, doubling radius and two fewer pixels per ring
+	local r,n=tanker and 26 or 32,16
+	for ring=1,3 do
+		local c=tanker and (ring==1 and COL_WHITE
+			or ring==2 and COL_YELLOW or COL_CYCLE_HOT) or o.color
+		draw_particle_ring(m,n,r,c)
+		r*=2
+		n-=2
+	end
 end

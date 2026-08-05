@@ -309,7 +309,7 @@ function resolve_enemy_hit(self)
 		add_score(score or 0,self.pos,self.depth)
 		if not pup then
 			local e=spawn_object(EXPLOSION,self)
-			if tanker then e.shape,e.duration,e.end_scale=e.shapes[3],20,2 end
+			if tanker then e.tanker_explosion,e.duration,e.end_scale=true,20,2 end
 		end
 		sfx(36)
 	end

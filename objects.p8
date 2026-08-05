@@ -23,8 +23,10 @@ end
 function draw_object(o)
 	if o.type==CLAW and game_state==G_WARP and game_warp_chain then return end
 	if o.type==SPIKE then draw_spike(o) return end
+	local particles=o.type==EXPLOSION or o.type==PART_RING
+		or o.type==POWERUP and o.state==SPAWN
 	local s=o.type==PUTANKER and spawn_data[PUTANKER].shape or o.shape
-	if not s then return end
+	if not s and not particles then return end
 	local p=o.type==CLAW and snap_pos(o.pos) or o.pos
 	local x,y,z=project(p,o.depth)
 
@@ -39,6 +41,7 @@ function draw_object(o)
 
 	mul_affine(scratch_mat,scratch_mat,game_active_web.shape.normals[lane(p)])
 	mul_affine(scratch_mat,scratch_mat,o.affine)
+	if particles then draw_explosion(o,scratch_mat) return end
 
 	if o.type==UFO and o.cross>=49 then
 		draw_zap(o.pos,o.depth,o.pos,160)

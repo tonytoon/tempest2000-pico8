@@ -175,7 +175,6 @@ end_scale=1.5
 rot_speed=.0390625
 angle=0
 color=COL_CYCLE_HOT
-shapes=V_EXPLOSION_HOT,V_EXPLOSION_COOL,V_TANKER_EXPLOSION
 
 [SPLATTER]
 state=WEB
@@ -196,14 +195,13 @@ end_scale=0
 rot_speed=.01
 angle=0
 color=COL_CYCLE_COOL
-shapes=V_EXPLOSION_COOL,V_POWERUP
+shapes=V_POWERUP
 
 [PART_RING]
 state=WEB
 team=PUFX
 rot=.00390625
 color=COL_CYCLE_COOL
-shapes=V_RING
 
 [curve FLIPPER]
 values=80,81,82,83,84,85,86,87,84,85,86,87,88,89,90,91
