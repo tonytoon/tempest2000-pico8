@@ -14,8 +14,13 @@ from pathlib import Path
 GFX_LINE_BYTES = 64
 MAP_LINE_BYTES = 128
 MAP_BYTES = 0x1000
+GFX_END_ADDRESS = 0x2000
+MAP_START_ADDRESS = GFX_END_ADDRESS
+MAP_END_ADDRESS = MAP_START_ADDRESS + MAP_BYTES
 P8_HEADER = "pico-8 cartridge // http://www.pico-8.com\nversion 43\n"
 ALIAS_PAYLOAD_SIZE = 3
+CMD_COLOR = -1
+VERTEX_DELTA_FLAG = 0x80
 OBJECT_FIELDS = (
     "type",
     "state",
@@ -97,8 +102,8 @@ class PackedFile:
     prefix: str | None
     data: list[int] = field(default_factory=list)
     labels: list[Label] = field(default_factory=list)
-    messages: list[str] = field(default_factory=list)
     object_defs: ObjectDefinitions | None = None
+    redundant_colors_removed: int = 0
 
 
 @dataclass
@@ -220,6 +225,190 @@ def pack_record(
             "maximum is 255"
         )
     return [gfx_byte(len(payload)), *payload]
+
+
+def pack_vertex_record(
+    path: Path, line_number: int, fields: list[str]
+) -> list[int]:
+    """Pack vertices, using signed nibble deltas when the whole record permits."""
+    values = parse_numbers(path, line_number, fields)
+    if not values:
+        raise ValueError(f"{path}:{line_number}: vertex record cannot be empty")
+
+    count, *coordinates = values
+    if count < 1 or len(coordinates) != count * 2:
+        raise ValueError(
+            f"{path}:{line_number}: vertex record declares {count} vertices "
+            f"but supplies {len(coordinates) // 2}"
+        )
+    # The ordinary format needs 1 + 2*count payload bytes, so the existing
+    # one-byte record-size limit already caps count at 127. Its high bit is
+    # therefore free to identify the delta format at runtime.
+    if count >= VERTEX_DELTA_FLAG:
+        raise ValueError(
+            f"{path}:{line_number}: vertex count {count} exceeds the maximum 127"
+        )
+    if any(not -128 <= value <= 127 for value in coordinates):
+        raise ValueError(
+            f"{path}:{line_number}: vertex coordinates must be signed bytes"
+        )
+
+    vertices = list(zip(coordinates[::2], coordinates[1::2]))
+    deltas = [
+        (x1 - x0, y1 - y0)
+        for (x0, y0), (x1, y1) in zip(vertices, vertices[1:])
+    ]
+    if count > 1 and all(
+        -8 <= dx <= 7 and -8 <= dy <= 7 for dx, dy in deltas
+    ):
+        x, y = vertices[0]
+        payload = [
+            gfx_byte(count | VERTEX_DELTA_FLAG),
+            gfx_byte(x),
+            gfx_byte(y),
+        ]
+        payload.extend(
+            gfx_byte((dx & 0x0F) | ((dy & 0x0F) << 4)) for dx, dy in deltas
+        )
+    else:
+        payload = [gfx_byte(count)]
+        payload.extend(gfx_byte(value) for value in coordinates)
+
+    if len(payload) > 255:
+        raise ValueError(
+            f"{path}:{line_number}: vertex payload is {len(payload)} bytes; "
+            "maximum is 255"
+        )
+    return [gfx_byte(len(payload)), *payload]
+
+
+def pack_command_record(
+    path: Path, line_number: int, fields: list[str]
+) -> list[int]:
+    """Pack commands with high-bit opcodes delimiting their unsigned arguments."""
+    values = parse_numbers(path, line_number, fields)
+    command_count = values[0]
+    position = 1
+    payload: list[int] = []
+
+    for command_number in range(1, command_count + 1):
+        opcode, argument_count = values[position : position + 2]
+        end = position + 2 + argument_count
+        arguments = values[position + 2 : end]
+        position = end
+        if not -128 <= opcode < 0:
+            raise ValueError(
+                f"{path}:{line_number}: command {command_number} opcode "
+                f"{opcode} must be a negative signed byte"
+            )
+        if any(not 0 <= argument < 128 for argument in arguments):
+            raise ValueError(
+                f"{path}:{line_number}: command {command_number} arguments must "
+                "be in 0..127 because the high bit identifies opcodes"
+            )
+        payload.append(gfx_byte(opcode))
+        payload.extend(gfx_byte(argument) for argument in arguments)
+
+    if position != len(values):
+        raise ValueError(
+            f"{path}:{line_number}: command record has "
+            f"{len(values) - position} trailing values"
+        )
+    if len(payload) > 255:
+        raise ValueError(
+            f"{path}:{line_number}: command payload is {len(payload)} bytes; "
+            "maximum is 255"
+        )
+    return [gfx_byte(len(payload)), *payload]
+
+
+def pack_message_record(
+    path: Path, line_number: int, fields: list[str]
+) -> list[int]:
+    """Pack one message as a length-prefixed P8SCII/ASCII string."""
+    if len(fields) == 1:
+        text = fields[0]
+    elif len(fields) == 5:
+        # Keep input compatibility with the old x,y,hold,exit,text format.
+        # Display settings now belong to add_message() and are not stored.
+        parse_numbers(path, line_number, fields[:4])
+        text = fields[4]
+    else:
+        raise ValueError(
+            f"{path}:{line_number}: message data needs just text, or the legacy "
+            "x,y,hold,exit,text form"
+        )
+
+    text = text.replace(r"\n", "|")
+    try:
+        encoded = text.encode("ascii")
+    except UnicodeEncodeError as error:
+        raise ValueError(
+            f"{path}:{line_number}: message contains characters that need an "
+            "explicit P8SCII mapping"
+        ) from error
+    if len(encoded) > 255:
+        raise ValueError(
+            f"{path}:{line_number}: message is {len(encoded)} bytes; maximum is 255"
+        )
+    return [gfx_byte(len(encoded)), *(gfx_byte(byte) for byte in encoded)]
+
+
+def optimize_command_record(
+    path: Path, line_number: int, fields: list[str]
+) -> tuple[list[str], int]:
+    """Remove color commands that repeat the current color within one record."""
+    values = parse_numbers(path, line_number, fields)
+    command_count = values[0]
+    if command_count < 0:
+        raise ValueError(f"{path}:{line_number}: command count cannot be negative")
+
+    commands: list[tuple[int, list[int]]] = []
+    current_color: int | None = None
+    removed = 0
+    position = 1
+
+    for command_number in range(1, command_count + 1):
+        if position + 1 >= len(values):
+            raise ValueError(
+                f"{path}:{line_number}: command {command_number} is missing "
+                "its opcode or argument count"
+            )
+        opcode, argument_count = values[position : position + 2]
+        if argument_count < 0:
+            raise ValueError(
+                f"{path}:{line_number}: command {command_number} has a negative "
+                "argument count"
+            )
+        end = position + 2 + argument_count
+        if end > len(values):
+            raise ValueError(
+                f"{path}:{line_number}: command {command_number} declares "
+                f"{argument_count} arguments but only "
+                f"{len(values) - position - 2} remain"
+            )
+        arguments = values[position + 2 : end]
+        position = end
+
+        if opcode == CMD_COLOR and argument_count == 1:
+            color = arguments[0]
+            if color == current_color:
+                removed += 1
+                continue
+            current_color = color
+        commands.append((opcode, arguments))
+
+    if position != len(values):
+        raise ValueError(
+            f"{path}:{line_number}: command record declares {command_count} "
+            f"commands but has {len(values) - position} trailing values"
+        )
+
+    optimized = [str(len(commands))]
+    for opcode, arguments in commands:
+        optimized.extend((str(opcode), str(len(arguments))))
+        optimized.extend(str(value) for value in arguments)
+    return optimized, removed
 
 
 def parse_object_defs(
@@ -482,36 +671,33 @@ def pack_file(path: Path, address: int) -> PackedFile:
         if any(not field for field in fields):
             raise ValueError(f"{path}:{entry.line_number}: empty value in data line")
         if packed.prefix == "S":
-            # Message data lives in a Lua string: it costs characters, but almost
-            # no PICO-8 tokens and requires no byte-by-byte decoder.
-            # Plain text (no x,y,hold,exit) is allowed for messages that never setmsg/drawmsg.
-            if len(fields) == 1:
-                packed.messages.append(fields[0].replace(r"\n", "|"))
-            elif len(fields) == 5:
-                parse_numbers(path, entry.line_number, fields[:4])
-                packed.messages.append(",".join(fields[:4] + [fields[4].replace(r"\n", "|")]))
-            else:
-                raise ValueError(
-                    f"{path}:{entry.line_number}: "
-                    "message data needs x,y,hold,exit,text or just text"
-                )
+            record = pack_message_record(path, entry.line_number, fields)
         else:
-            record = pack_record(
-                path, entry.line_number, fields, packed.prefix == "W"
-            )
-            record_key = bytes(record)
-            canonical = records.get(record_key)
-            if canonical is not None and len(record) > ALIAS_PAYLOAD_SIZE + 1:
-                packed.data.extend(
-                    [
-                        gfx_byte(ALIAS_PAYLOAD_SIZE),
-                        gfx_byte(0),
-                        *gfx_u16(canonical),
-                    ]
+            if packed.prefix == "C":
+                fields, removed = optimize_command_record(
+                    path, entry.line_number, fields
                 )
+                packed.redundant_colors_removed += removed
+                record = pack_command_record(path, entry.line_number, fields)
+            elif packed.prefix == "V":
+                record = pack_vertex_record(path, entry.line_number, fields)
             else:
-                records[record_key] = address + len(packed.data)
-                packed.data.extend(record)
+                record = pack_record(
+                    path, entry.line_number, fields, packed.prefix == "W"
+                )
+        record_key = bytes(record)
+        canonical = records.get(record_key)
+        if canonical is not None and len(record) > ALIAS_PAYLOAD_SIZE + 1:
+            packed.data.extend(
+                [
+                    gfx_byte(ALIAS_PAYLOAD_SIZE),
+                    gfx_byte(0),
+                    *gfx_u16(canonical),
+                ]
+            )
+        else:
+            records[record_key] = address + len(packed.data)
+            packed.data.extend(record)
 
     return packed
 
@@ -547,11 +733,18 @@ def write_gfx(path: Path, data: list[int]) -> None:
     )
 
 
-def write_map(path: Path, data: list[int]) -> None:
-    """Write runtime bytes using the conventional __map__ byte order."""
+def write_map(path: Path, data: list[int], data_address: int) -> None:
+    """Right-align runtime bytes in __map__ using conventional byte order."""
     if len(data) > MAP_BYTES:
         raise ValueError(f"map data is {len(data)} bytes; maximum is {MAP_BYTES}")
-    data = data + [0] * (MAP_BYTES - len(data))
+    if not MAP_START_ADDRESS <= data_address <= MAP_END_ADDRESS:
+        raise ValueError(f"map data address 0x{data_address:04X} is outside MAP")
+    if data_address + len(data) != MAP_END_ADDRESS:
+        raise ValueError(
+            f"map data at 0x{data_address:04X} ends at "
+            f"0x{data_address + len(data):04X}, not 0x{MAP_END_ADDRESS:04X}"
+        )
+    data = [0] * (data_address - MAP_START_ADDRESS) + data
     lines = [
         "".join(
             f"{gfx_byte(byte):02x}" for byte in data[start : start + MAP_LINE_BYTES]
@@ -617,14 +810,36 @@ def typed_files(files: list[PackedFile], prefix: str) -> list[PackedFile]:
     return [item for item in files if item.prefix == prefix and item.labels]
 
 
-def write_enums(path: Path, files: list[PackedFile]) -> None:
+def write_enums(
+    path: Path,
+    files: list[PackedFile],
+    gfx_free_address: int,
+    map_data_address: int,
+) -> None:
     """Write constants and runtime pointer-table initialization."""
     sections = [item.section for item in files]
     if len(sections) != len(set(sections)):
         duplicate = next(name for name in sections if sections.count(name) > 1)
         raise ValueError(f"duplicate generated section name {duplicate!r}")
 
-    lines = ["-- generated by pack.py; do not edit", "", "-- packed section starting addresses"]
+    lines = [
+        "-- generated by pack.py; do not edit",
+        (
+            "--$def-alias: packed_rom = parens8 "
+            f"rom=0x{gfx_free_address:04X} rom_end=0x{map_data_address:04X}"
+        ),
+        "",
+        "-- packed memory bounds (end pointers are exclusive)",
+        const("PTR_FREE_START", f"0x{gfx_free_address:04X}"),
+        const("PTR_FREE_END", f"0x{map_data_address:04X}"),
+        const("PTR_GFX_FREE", f"0x{gfx_free_address:04X}"),
+        const("PTR_GFX_END", f"0x{GFX_END_ADDRESS:04X}"),
+        const("PTR_MAP_FREE", f"0x{MAP_START_ADDRESS:04X}"),
+        const("PTR_MAP_DATA", f"0x{map_data_address:04X}"),
+        const("PTR_MAP_END", f"0x{MAP_END_ADDRESS:04X}"),
+        "",
+        "-- packed section starting addresses",
+    ]
     lines += [
         const(f"PTR_{item.section}_DATA", f"0x{item.address:04X}") for item in files
     ]
@@ -658,23 +873,20 @@ def write_enums(path: Path, files: list[PackedFile]) -> None:
     ]
     lines += [
         f"{table}={{}}" for prefix, (table, _) in TYPES.items()
-        if prefix != "S" and typed_files(files, prefix)
+        if typed_files(files, prefix)
     ]
 
-    message_rows = [row for item in typed_files(files, "S") for row in item.messages]
-    if message_rows:
+    if typed_files(files, "S"):
         lines += [
             "",
-            "message_string=[[" + "\n".join(message_rows) + "]]",
             "function get_message(i)",
-            ' return split(split(message_string,"\\n")[i])',
+            " local a=unpack_addr(messages_data[i])",
+            " return chr(peek(a,@(a-1)))",
             "end",
         ]
 
     lines += ["", "function init_packed_data()"]
     for prefix, (table, _) in TYPES.items():
-        if prefix == "S":
-            continue
         for item in typed_files(files, prefix):
             start = 0
             while start < len(item.labels):
@@ -740,19 +952,35 @@ def main() -> None:
         packed = pack_file(path, address)
         gfx_files.append(packed)
         address += len(packed.data)
-    if address > 0x2000:
-        raise ValueError(f"graphics data ends at 0x{address:04X}, beyond 0x1FFF")
+    gfx_free_address = address
+    if gfx_free_address > GFX_END_ADDRESS:
+        raise ValueError(
+            f"graphics data ends at 0x{gfx_free_address:04X}, beyond 0x1FFF"
+        )
 
-    map_files: list[PackedFile] = []
-    address = 0x2000
     for path in args.map_inputs:
         if not path.is_file():
             raise FileNotFoundError(f"Input file not found: {path}")
+
+    map_data_size = sum(
+        len(pack_file(path, 0).data) for path in args.map_inputs
+    )
+    if map_data_size > MAP_BYTES:
+        raise ValueError(
+            f"map data is {map_data_size} bytes; maximum is {MAP_BYTES}"
+        )
+
+    map_data_address = MAP_END_ADDRESS - map_data_size
+    map_files: list[PackedFile] = []
+    address = map_data_address
+    for path in args.map_inputs:
         packed = pack_file(path, address)
         map_files.append(packed)
         address += len(packed.data)
-    if address > 0x3000:
-        raise ValueError(f"map data ends at 0x{address:04X}, beyond 0x2FFF")
+    if address != MAP_END_ADDRESS:
+        raise AssertionError(
+            f"map data unexpectedly ends at 0x{address:04X}, not 0x3000"
+        )
 
     files = gfx_files + map_files
     assign_ids(files)
@@ -766,16 +994,38 @@ def main() -> None:
     gfx_data = [byte for item in gfx_files for byte in item.data]
     map_data = [byte for item in map_files for byte in item.data]
     write_gfx(args.output, gfx_data)
-    write_map(args.map_output, map_data)
+    write_map(args.map_output, map_data, map_data_address)
     for cart in args.cart or []:
         update_cart(cart, args.output, args.map_output)
     write_index(args.index, files)
-    write_enums(args.enums, files)
+    write_enums(args.enums, files, gfx_free_address, map_data_address)
 
     print(f"Wrote {len(gfx_data)} bytes to {args.output}")
     print(f"Wrote {len(map_data)} bytes to {args.map_output}")
     print(f"Wrote metadata for {len(files)} files to {args.index}")
     print(f"Wrote enums and pointer initialization to {args.enums}\n")
+    print(
+        f"PTR_FREE_START=0x{gfx_free_address:04X} "
+        f"PTR_FREE_END=0x{map_data_address:04X} "
+        f"-- {map_data_address - gfx_free_address} contiguous bytes"
+    )
+    print(
+        f"PTR_GFX_FREE=0x{gfx_free_address:04X} "
+        f"PTR_GFX_END=0x{GFX_END_ADDRESS:04X}"
+    )
+    print(
+        f"PTR_MAP_FREE=0x{MAP_START_ADDRESS:04X} "
+        f"PTR_MAP_DATA=0x{map_data_address:04X} "
+        f"PTR_MAP_END=0x{MAP_END_ADDRESS:04X}"
+    )
+    redundant_colors_removed = sum(
+        item.redundant_colors_removed for item in files
+    )
+    if redundant_colors_removed:
+        print(
+            f"Removed {redundant_colors_removed} redundant color commands "
+            "during packing"
+        )
     for item in files:
         print(
             f"PTR_{item.section}_DATA=0x{item.address:04X} "

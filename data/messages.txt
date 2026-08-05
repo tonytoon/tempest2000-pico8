@@ -1,37 +1,39 @@
-; Transient messages displayed through setmsg/drawmsg in yak.s.
-; data=x_center,y_baseline,hold_frames,exit_frames,text
-; A \n adds drawmsg's second centered line at y=100.
+; Message strings packed into ROM as length-prefixed records.
+; data=text
+; A \n is converted to | as the runtime line separator.
 
 [collect_powerups]
-data=192,80,100,50,COLLECT POWERUPS!
+data=COLLECT POWERUPS!
 [particle_laser]
-data=192,80,100,50,PARTICLE LASER!
+data=PARTICLE LASER!
 [jump_enabled]
-data=192,80,100,50,JUMP ENABLED!
+data=JUMP ENABLED!
+[jump_help]
+data=PRESS DOWN TO JUMP!
 [ai_droid]
-data=192,80,100,50,A.I. DROID!
+data=A.I. DROID!
 [outta_here]
-data=192,80,100,50,OUTTA HERE!
+data=OUTTA HERE!
 [yes_yes_yes]
-data=192,80,100,50,YES! YES! YES!
+data=YES! YES! YES!
 [two_more_for_warp]
-data=192,80,100,50,2 MORE FOR WARP
+data=2 MORE FOR WARP
 [one_more_for_warp]
-data=192,80,100,50,1 MORE FOR WARP
+data=1 MORE FOR WARP
 [warp_enabled]
-data=192,80,100,50,WARP ENABLED
+data=WARP ENABLED
 [caught_you]
-data=192,80,100,50,CAUGHT YOU!
+data=CAUGHT YOU!
 [shot_you]
-data=192,80,100,50,SHOT YOU!
+data=SHOT YOU!
 [fried_you]
-data=192,80,100,50,FRIED YOU!
+data=FRIED YOU!
 [eat_electric_death]
-data=192,80,100,50,EAT ELECTRIC\nDEATH!
+data=EAT ELECTRIC\nDEATH!
 [avoid_the_spikes]
-data=192,80,250,50,AVOID THE SPIKES
+data=AVOID THE SPIKES
 [superzapper_recharge]
-data=192,32,250,50,SUPERZAPPER\nRECHARGE
+data=SUPERZAPPER\nRECHARGE
 [complete_regular]
 data=|      AMAZING!|  YOU FINISHED ALL| NINETY-NINE STAGES!|  I GUESS YOU WANT|   A SECOND LOOP!|   GET READY FOR|  A REAL CHALLENGE!||BEASTLY MODE UNLOCKED|||  PRESS ANY BUTTON|    TO CONTINUE
 [complete_beastly]

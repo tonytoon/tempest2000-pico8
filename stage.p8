@@ -51,6 +51,8 @@ function init_game()
 	game_warp_flash=0
 	game_infinite_zap=false
 	game_music_playing=nil
+	game_jump_help_shown=false
+	hud_cpu_max=0
 end
 
 function init_stage(stage,from_preview)
@@ -182,8 +184,7 @@ function begin_stage_exit(spike)
 end
 
 function begin_finish_screen()
-	local message=get_message(game_beastly and S_COMPLETE_BEASTLY or S_COMPLETE_REGULAR)
-	game_complete_message=message[1]
+	game_complete_message=get_message(game_beastly and S_COMPLETE_BEASTLY or S_COMPLETE_REGULAR)
 	if not game_beastly then
 		game_beastly_unlocked=true
 		game_regular_high_stage=game_stage_max

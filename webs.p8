@@ -99,7 +99,7 @@ t2k_webs={
 }
 
 function make_web(stage)
-	-- packed web data contain vertices, commands, and meta data
+	-- packed web data contain vertices and meta data
 	-- meta data is the number of lanes, which lane the player starts in
 	-- as well as orientation data. orientation is basically the surface
 	-- normal for each lane but hand-tuned to ensure objects point the right
@@ -112,14 +112,18 @@ function make_web(stage)
 
     local web_id=t2k_webs[(stage-1)%#t2k_webs+1]
 
-    web.shape.verts = unpack_verts(verts_data[web_id])
-    web.shape.cmds  = unpack_cmds(cmds_data[web_id])
-    local web_meta  = unpack_web_meta(meta_data[web_id])
+	web.shape.verts=unpack_verts(verts_data[web_id])
+	local web_meta=unpack_web_meta(meta_data[web_id])
 
 	web.lanes = web_meta.lanes
-	
 	web.start = web_meta.start
 	web.closed = web_meta.closed
+
+	-- every web outline uses color 11 and visits each vertex in order;
+	-- closed is the only per-web command difference, so reconstruct it here
+	local outline={web.closed and cmd_cls or cmd_opn}
+	for i=1,#web.shape.verts do add(outline,i) end
+	web.shape.cmds={{cmd_col,COL_WEB_SPOKES},outline}
 
 	-- we create an affine transform matrix for each lane that is used
 	-- to make sure objects consistently point "up". some trial and error math

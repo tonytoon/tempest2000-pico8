@@ -66,7 +66,13 @@ function grant_powerup(pu)
         game_current_cooldown=min(game_current_cooldown,3)
         add_message(S_PARTICLE_LASER)
 	    elseif pu == PU_JUMP then
-	        add_message(S_JUMP_ENABLED)
+            if not game_jump_help_shown then
+                add_message(S_JUMP_HELP)
+                game_jump_help_shown=true
+            else
+                add_message(S_JUMP_ENABLED)
+            end
+	        
 	        game_pu_jump = true
 	elseif pu == PU_DROID then
 		if game_pu_droid then grant_surprise() return end
