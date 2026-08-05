@@ -183,10 +183,6 @@ function draw_hud()
 
 	print('stage:'..game_stage,96,8+adjust_y,COL_WHITE)
 
-	local cpu=flr(stat(1)*100)
-	hud_cpu_max=max(hud_cpu_max,cpu)
-	local cpu_text="cpu:"..cpu.."/"..hud_cpu_max.."%"
-	print(cpu_text,64-#cpu_text*2,adjust_y,COL_LIGHT_GREY)
 	show_messages()
 end
 
@@ -329,8 +325,6 @@ function update_warp_state()
 	end
 end
 
---$switch-compiler: parens8
-
 function finish_frame_update()
 	finish_object_updates(player_objects)
 	finish_object_updates(world_objects)
@@ -339,7 +333,21 @@ end
 
 --$switch-compiler: none
 
-function _update60()
+profile_names=split"upd,web,bonus,obj,hud"
+
+function profile_start()
+	profile_t=stat(1)
+end
+
+function profile_mark(i)
+	local t=stat(1)
+	local v=(t-profile_t)*100
+	profile_cur[i]=v
+	profile_max[i]=max(profile_max[i] or 0,v)
+	profile_t=t
+end
+
+function update_frame()
 	if crt_adjust then adjust_y = 4 else adjust_y = 0 end
 	game_world_tics+=1
 	local m=mouse_opts[1] and stat(34)>0
@@ -381,6 +389,12 @@ function _update60()
 	end
 
 	finish_frame_update()
+end
+
+function _update60()
+	profile_start()
+	update_frame()
+	profile_mark(1)
 end
 
 function draw_menu(text,y)
@@ -501,9 +515,23 @@ function draw_complete_state()
 	end
 end
 
+function draw_profile()
+	local cpu=flr(stat(1)*100)
+	hud_cpu_max=max(hud_cpu_max,cpu)
+	local s="cpu:"..cpu.."/"..hud_cpu_max.."%"
+	print(s,64-#s*2,adjust_y,COL_LIGHT_GREY)
+	for i=1,#profile_names do
+		s=profile_names[i]..":"..flr(profile_cur[i] or 0).."/"..flr(profile_max[i] or 0)
+		print(s,0,88-adjust_y+i*7,COL_LIGHT_GREY)
+	end
+end
+
 function draw_gameplay_state()
+	profile_start()
 	draw_game_web()
+	profile_mark(2)
 	draw_score_awards()
+	profile_mark(3)
 	draw_web_effects()
 
 	if game_state<G_MENU then build_draw_list() end
@@ -516,7 +544,10 @@ function draw_gameplay_state()
 		)
 		super_zap_target=nil
 	end
+	profile_mark(4)
 	draw_hud()
+	profile_mark(5)
+	draw_profile()
 	if game_warp_flash>0 then
 		rectfill(0,0,127,127,COL_WHITE)
 		game_warp_flash-=1

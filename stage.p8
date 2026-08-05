@@ -53,6 +53,7 @@ function init_game()
 	game_music_playing=nil
 	game_jump_help_shown=false
 	hud_cpu_max=0
+	profile_cur,profile_max={},{}
 end
 
 function init_stage(stage,from_preview)

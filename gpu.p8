@@ -111,12 +111,6 @@ function apset(x,y,c)
 	pset(x,y,c)
 end
 
-function arectfill(x0,y0,x1,y1)
-	x0,y0=aspect_point(x0,y0)
-	x1,y1=aspect_point(x1,y1)
-	rectfill(x0,y0,x1,y1)
-end
-
 -- polyfill with subpixel accuracy. used for objects such as lanes and shapes that are not
 -- broken down into triangles. not optimal for triangles - that's why we have the second
 -- function below.
@@ -124,9 +118,9 @@ end
 function polyfill(v,c)
 	color(c)
 	local p0,spans=v[#v],{}
-	local x0,y0=p0[1],p0[2]
+	local x0,y0=aspect_point(p0[1],p0[2])
 	for i,p1 in inext,v do
-		local x1,y1=p1[1],p1[2]
+		local x1,y1=aspect_point(p1[1],p1[2])
 		local _x1,_y1=x1,y1
 		if(y0>y1) x0,y0,x1,y1=x1,y1,x0,y0
 		local dx=(x1-x0)/(y1-y0)
@@ -138,7 +132,7 @@ function polyfill(v,c)
 		for y=cy0,y1 do
 			local span=spans[y]
 			if span then
-				arectfill(x0,y,span,y)
+				rectfill(x0,y,span,y)
 			else
 				spans[y]=x0
 			end
@@ -154,6 +148,9 @@ end
 --@p01
 function p01_triangle_163(x0,y0,x1,y1,x2,y2,col)
 	color(col)
+	x0,y0=aspect_point(x0,y0)
+	x1,y1=aspect_point(x1,y1)
+	x2,y2=aspect_point(x2,y2)
 	if(y1<y0)x0,x1,y0,y1=x1,x0,y1,y0
 	if(y2<y0)x0,x2,y0,y2=x2,x0,y2,y0
 	if(y2<y1)x1,x2,y1,y2=x2,x1,y2,y1
@@ -167,7 +164,7 @@ function p01_trapeze_h(l,r,lt,rt,y0,y1)
 	if(y0<0)l,r,y0=l-y0*lt,r-y0*rt,0
 	y1=min(y1,128)
 	for y0=y0,y1 do
-		arectfill(l,y0,r,y0)
+		rectfill(l,y0,r,y0)
 		l+=lt
 		r+=rt
 	end
