@@ -58,6 +58,32 @@ function draw_web()
 	web_spokes.cmds[1][2]=oneup_timer>0 and 15 or COL_WEB_SPOKES
 end
 
+function draw_bonus_web(scroll)
+	local v=game_active_web.near_verts
+	local zmax=camera_z+360
+	local z=camera_z+camera_near
+	local nz=min(z+32-scroll%32,zmax)
+	local row=scroll\32
+	local nbuf,fbuf=near_buf,far_buf
+	for i=1,#v do
+		nbuf[i][1],nbuf[i][2]=project_world(v[i][1],v[i][2],z)
+	end
+	while z<zmax do
+		for i=1,#v do
+			fbuf[i][1],fbuf[i][2]=project_world(v[i][1],v[i][2],nz)
+		end
+		for i=1,num_lanes do
+			local j=i%#v+1
+			local a,b,c,d=nbuf[i],nbuf[j],fbuf[j],fbuf[i]
+			local col=(i+row)%2==0 and COL_WEB2 or COL_WEB1
+			polyfill({a,b,c,d},col)
+		end
+		nbuf,fbuf=fbuf,nbuf
+		z,nz=nz,min(nz+32,zmax)
+		row+=1
+	end
+end
+
 function lane_quad(lane_number)
 	local next_lane=lane_number%#far_buf+1
 	return {
@@ -98,7 +124,7 @@ t2k_webs={
 	V_WEB32,V_WEB33,V_WEB34,V_WEB35,V_WEB36,V_WEB37,V_WEB26,V_WEB31
 }
 
-function make_web(stage)
+function make_web(stage,web_id)
 	-- packed web data contain vertices and meta data
 	-- meta data is the number of lanes, which lane the player starts in
 	-- as well as orientation data. orientation is basically the surface
@@ -110,7 +136,7 @@ function make_web(stage)
 
     web.wave = unpack_wave(waves_data[stage])
 
-    local web_id=t2k_webs[(stage-1)%#t2k_webs+1]
+	web_id=web_id or t2k_webs[(stage-1)%#t2k_webs+1]
 
 	web.shape.verts=unpack_verts(verts_data[web_id])
 	local web_meta=unpack_web_meta(meta_data[web_id])
@@ -140,8 +166,8 @@ function make_web(stage)
 	return web
 end
 
-function init_web(stage)
-	game_active_web=make_web(stage)
+function init_web(stage,web_id)
+	game_active_web=make_web(stage,web_id)
 	
 	center_web(game_active_web)
 

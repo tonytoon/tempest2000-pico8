@@ -45,6 +45,7 @@
 --[[const]] M_STAGE_SELECT = 2
 --[[const]] M_OPTIONS = 3
 --[[const]] M_DATA = 4
+--[[const]] M_UPDATE = 5
 
 -- object states
 --[[const]] WEB = 65
@@ -65,6 +66,18 @@
 --[[const]] PU_DROID = 258
 --[[const]] PU_SURPRISE = 259
 --[[const]] PU_SZ_WARP = 260
+
+-- sound effects
+--[[const]] SFX_PLAYER_SHOT = 35
+--[[const]] SFX_EXPLOSION = 36
+--[[const]] SFX_SUPERZAPPER = 37
+--[[const]] SFX_FLIP = 38
+--[[const]] SFX_SPIKE_HIGH = 39
+--[[const]] SFX_SPIKE_MID = 40
+--[[const]] SFX_SPIKE_LOW = 41
+--[[const]] SFX_JUMP = 42
+--[[const]] SFX_DROID = 43
+--[[const]] SFX_POWERUP = 44
 
 -- palette colors
 --[[const]] COL_BLACK = 0

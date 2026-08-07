@@ -32,19 +32,11 @@ palettes={
 
 function init_palette(p)
 	for i=0,13 do pal(i,p[i+1],1) end
-	web_col_a,web_col_b=p[13],p[14]
 end
-
 
 -- physical colors used by the two animated logical colors
 cycle_cols_hot={10,9,8,2,12,11,10}
 cycle_cols_cool={12,7,14,7,12,13,14,7}
-
--- ping-ponged bayer ordered-dither ramp (scattered dots, not stripes) - the
--- asymmetric levels make the a/b swap above visible, and a per-lane phase
--- offset (draw_game_web) turns the ramp into a wave traveling around the web
-web_dither={0,0x8020,0xa0a0,0xa4a1,0xa5a5,0xe5b5,0xf5f5,0xfdf7,
-	0xffff,0xfdf7,0xf5f5,0xe5b5,0xa5a5,0xa4a1,0xa0a0,0x8020}
 
 function cycle_palette(t)
 	local count=#cycle_cols_hot

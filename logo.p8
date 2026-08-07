@@ -3,8 +3,10 @@ tempest_logo,tempest_logo_outline={},{}
 function init_tempest_logo()
 	for i=0,7 do
 		local s=unpack_shape(V_TEMPEST_LOGO1+i)
+		local c={cmd_cls}
+		for j=1,#s.verts do add(c,j) end
 		add(tempest_logo,s)
-		add(tempest_logo_outline,{verts=s.verts,cmds=unpack_cmds(cmds_data[C_TEMPEST_LOGO_OUTLINE1+i])})
+		add(tempest_logo_outline,{verts=s.verts,cmds={{cmd_col,7},c}})
 	end
 end
 

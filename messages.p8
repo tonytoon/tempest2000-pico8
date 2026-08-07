@@ -26,7 +26,11 @@ function show_messages()
 		end
 
 		local y,a=m[2]+32,split(m[5],"|")
-		local z=120/(5*#a[1]-1)
+		local l=0
+        for s in all(a) do
+            l=max(l,#s)
+        end
+        local z=120/(5*l-1)
 		local k=z*(abs((game_world_tics*2)%256-127)-63)/128
 		local sy=z*min(1,m[3]/20)
 

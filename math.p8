@@ -60,7 +60,7 @@ end
 function draw_quad(v,col)
 	for i=1,4 do
 		local a,b=v[i],v[i%4+1]
-		aline(a[1],a[2],b[1],b[2],col)
+		line(a[1],a[2],b[1],b[2],col)
 	end
 end
 
@@ -92,7 +92,7 @@ function draw_world_line(ax,ay,az,bx,by,bz,col)
 	end
 	local x1,y1=project_camera(ax,ay,az)
 	local x2,y2=project_camera(bx,by,bz)
-	aline(x1,y1,x2,y2,col)
+	line(x1,y1,x2,y2,col)
 end
 
 -- project world web coordinates to screen coordinates

@@ -1,11 +1,12 @@
 -- waves are the definitions of how enemies are spawned into stages.
+--$switch-compiler: parens8
 
 function init_wave(wave)
 	for g in all(wave.generators) do
 		g.timer=flr(g.period/2)
 	end
 end
-
+--$switch-compiler: none
 function do_wave()
 	local wave=game_active_web.wave
 

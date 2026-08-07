@@ -5,7 +5,6 @@ pulsar_anim={
 }
 
 pulsar_deadliness=9
-pulsar_zap_color=COL_WHITE
 
 -- i would normally make extensive use of callbacks and a more nuanced update loop
 -- but crammed as much as i could into a big update loop to reduce token use
@@ -16,7 +15,7 @@ function update_enemy(self)
 		self.depth=160-self.health
 		if self.state==DEAD then
 			spawn_object(EXPLOSION,self)
-			sfx(36)
+			sfx(SFX_EXPLOSION)
 			self.active=false
 		end
 		return
@@ -24,6 +23,7 @@ function update_enemy(self)
 		self.shape=self.shapes[self.health]
 	elseif self.type==PULSAR or self.type==SPARK then
 		self.shape=self.shapes[pulsar_frame]
+		if self.type==PULSAR then self.cross+=1 end
 	elseif self.type==FUSEBALL and game_world_tics%4==0 then
 		self.shape=self.shapes[flr(rnd(2))+1]
 	end
@@ -38,7 +38,7 @@ function update_enemy(self)
 		if self.depth<=160 then
 			self.depth=160
 			if self.type==PULSAR then
-				if flr(game_world_tics/pulsar_deadliness)%16<3 then
+				if self.cross\pulsar_deadliness%16<3 then
 					self.state=WEB
 				end
 			elseif self.type==SPIKER then
@@ -61,18 +61,15 @@ function update_enemy(self)
 		or self.type==TANKER or self.type==FUTANKER
 		or self.type==PUTANKER or self.type==PULSAR then
 			if self.type==PULSAR then
-				lane_effects[lane(self.pos)]=pulsar_zap_color
-				local phase=flr(game_world_tics/pulsar_deadliness)%16
-				if phase>=5 and phase<=9 then
-					pulsar_zap_color=COL_CYCLE_COOL
-					if phase==7 and lane(player.pos)==lane(self.pos) then
-						kill_player(ZAP,self)
-					end
-				else
-					pulsar_zap_color=COL_WHITE
+				local phase=self.cross\pulsar_deadliness%16
+				local zap=phase>=5 and phase<=9
+				self.zap=game_bonus_stage and zap
+				lane_effects[lane(self.pos)]=zap and COL_CYCLE_COOL or COL_WHITE
+				if zap and phase==7 and lane(player.pos)==lane(self.pos) then
+					kill_player(ZAP,self)
 				end
 			end
-			if approach_edge(self) then
+			if not game_bonus_stage and approach_edge(self) then
 				self.state=EDGE
 			end
 
@@ -146,7 +143,7 @@ function update_enemy(self)
 		elseif self.type==TANKER or self.type==FUTANKER
 		or self.type==PUTANKER then
 			tanker_spawn(self)
-			sfx(36)
+			sfx(SFX_EXPLOSION)
 			self.active=false
 
 		elseif self.type==SPARK then
@@ -204,7 +201,6 @@ function update_enemy(self)
 		end
     end
 end
---$switch-compiler: none
 
 function update_ufo(self)
     if self.depth>-15 then
@@ -221,13 +217,14 @@ function update_ufo(self)
         self.pos+=self.dir/48
         self.cross+=1
     else
-        lane_effects[lane(self.pos)]=pulsar_zap_color
+		lane_effects[lane(self.pos)]=COL_WHITE
         if lane(self.pos)==lane(player.pos) and player.depth>=0 then
             kill_player(ZAP,self)
         end
         self.cross=(self.cross+1)%81
     end
 end
+--$switch-compiler: none
 
 function bonus_score()return 250+flr(rnd(3))*250 end
 
@@ -249,7 +246,7 @@ function resolve_enemy_hit(self)
             shot.team=nil
             shot.rot=nil
             move_to_world_objects(shot)
-            sfx(38)
+            sfx(SFX_FLIP)
             return
         end
         self.hit=true
@@ -269,11 +266,11 @@ function resolve_enemy_hit(self)
             self.hit=false
             spawn_object(SPLATTER,self)
             if self.health>96 then
-                sfx(40)
+                sfx(SFX_SPIKE_HIGH)
             elseif self.health>48 then
-                sfx(41)
+                sfx(SFX_SPIKE_MID)
             else
-                sfx(42)
+                sfx(SFX_SPIKE_LOW)
             end
         else
             spikes[lane(self.pos)]=nil
@@ -305,13 +302,13 @@ function resolve_enemy_hit(self)
 		if self.type==ESHOT then release_eshot(self) end
 		self.active=false
 		local score=self.score
-		if type(score)=="function" then score=score() end
-		add_score(score or 0,self.pos,self.depth)
+		local q=type(score)=="function"and score()
+		add_score(q or score or 0,self.pos,self.depth,q and q\250)
 		if not pup then
 			local e=spawn_object(EXPLOSION,self)
 			if tanker then e.tanker_explosion,e.duration,e.end_scale=true,20,2 end
 		end
-		sfx(36)
+		sfx(SFX_EXPLOSION)
 	end
 end
 --$switch-compiler: none
@@ -323,7 +320,7 @@ end
 
 function approach_edge(self, distance)
     distance = distance or 0
-    self.depth-=self.zspeed
+	self.depth-=game_bonus_stage and game_warp_speed or self.zspeed
 	if self.depth<=distance then
 		self.depth=distance
 		return true
@@ -384,7 +381,7 @@ function flipper_flip(self)
     local past_peak=self.flip_frame>frames*.6
     self.lethal,self.killable=not past_peak and not self.tanker_child,past_peak
     if self.flip_frame<frames then return end
-    sfx(38)
+    sfx(SFX_FLIP)
     self.flip_frame,self.dir,self.flip_lane,self.lethal,self.killable=0,false,nil,true,true
 	-- scarper is a real word used in britain that means to run away or flee
 	-- used in the jaguar source so i kept it because i like it

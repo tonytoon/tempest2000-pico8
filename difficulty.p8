@@ -11,7 +11,6 @@ function enemy_zspeed_for_stage(type,stage)
 	return @(speeds+min((stage-1)\2,49))/128
 end
 
---$switch-compiler: parens8
 
 function powerup_delay_for_stage(stage)
 	return @(CURVE_POWERUP_DELAY+min((max(1,stage)-1)\2,49))

@@ -8,14 +8,10 @@ data=COLLECT POWERUPS!
 data=PARTICLE LASER!
 [jump_enabled]
 data=JUMP ENABLED!
-[jump_help]
-data=PRESS DOWN TO JUMP!
 [ai_droid]
-data=A.I. DROID!
+data=AI DROID!
 [outta_here]
 data=OUTTA HERE!
-[yes_yes_yes]
-data=YES! YES! YES!
 [two_more_for_warp]
 data=2 MORE FOR WARP
 [one_more_for_warp]
@@ -34,6 +30,8 @@ data=EAT ELECTRIC\nDEATH!
 data=AVOID THE SPIKES
 [superzapper_recharge]
 data=SUPERZAPPER\nRECHARGE
+[wormhole_discovered]
+data=WORMHOLE\nDISCOVERED  
 [complete_regular]
 data=|      AMAZING!|  YOU FINISHED ALL| NINETY-NINE STAGES!|  I GUESS YOU WANT|   A SECOND LOOP!|   GET READY FOR|  A REAL CHALLENGE!||BEASTLY MODE UNLOCKED|||  PRESS ANY BUTTON|    TO CONTINUE
 [complete_beastly]
@@ -44,3 +42,9 @@ data=BASED ON tempest BY DAVE THEURER
 data=AND tempest 2000 BY JEFF MINTER
 [title_credit_3]
 data=CODE: DEEPTHAW MUSIC: ZENITH320
+[speed_up]
+data=SPEED UP
+[too_slow]
+data=TOO SLOW
+[update]
+data=REMOVED CRT ADJUST\nADDED BONUS STAGE\nPERFORMANCE IMPROVEMENTS

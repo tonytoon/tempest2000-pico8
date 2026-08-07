@@ -30,7 +30,7 @@ function gpu_draw(shape,m)
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
-				apset(out[1],out[2],col)
+				pset(out[1],out[2],col)
 			end
 		elseif op==cmd_opn or op==cmd_cls then
 			local px,py,fx,fy
@@ -39,24 +39,14 @@ function gpu_draw(shape,m)
 				apply_affine(m,v,out)
 				local x,y=out[1],out[2]
 				if px then
-					aline(px,py,x,y,col)
+					line(px,py,x,y,col)
 				else
 					fx,fy=x,y
 				end
 				px,py=x,y
 			end
-			if op==cmd_cls then aline(px,py,fx,fy,col) end
-		elseif op==cmd_tri then
-			local v=shape.verts[cmd[2]]
-			apply_affine(m,v,out)
-			local x0,y0=out[1],out[2]
-			v=shape.verts[cmd[3]]
-			apply_affine(m,v,out)
-			local x1,y1=out[1],out[2]
-			v=shape.verts[cmd[4]]
-			apply_affine(m,v,out)
-			p01_triangle_163(x0,y0,x1,y1,out[1],out[2],col)
-		elseif op==cmd_pol then
+			if op==cmd_cls then line(px,py,fx,fy,col) end
+		elseif op==cmd_tri or op==cmd_pol then
 			local vbuf = {}
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
@@ -93,23 +83,22 @@ function draw_zap(p,d,p2,d2)
 	for i=1,8 do
 		local nx,ny=lerp(x,x2,i/8)+rnd(5)-2,
 			lerp(y,y2,i/8)+rnd(5)-2
-		aline(x,y,nx,ny,COL_CYCLE_HOT)
+		line(x,y,nx,ny,COL_CYCLE_HOT)
 		x,y=nx,ny
 	end
-	aline(x,y,x2,y2,COL_CYCLE_HOT)
+	line(x,y,x2,y2,COL_CYCLE_HOT)
 end
 
--- aspect-correct wrappers for direct pset/line drawing
+-- now unused aspect corrected primitives
+
 function aline(x1,y1,x2,y2,c)
-	x1,y1=aspect_point(x1,y1)
-	x2,y2=aspect_point(x2,y2)
 	line(x1,y1,x2,y2,c)
 end
 
 function apset(x,y,c)
-	x,y=aspect_point(x,y)
 	pset(x,y,c)
 end
+
 
 -- polyfill with subpixel accuracy. used for objects such as lanes and shapes that are not
 -- broken down into triangles. not optimal for triangles - that's why we have the second
@@ -118,9 +107,9 @@ end
 function polyfill(v,c)
 	color(c)
 	local p0,spans=v[#v],{}
-	local x0,y0=aspect_point(p0[1],p0[2])
+	local x0,y0=p0[1],p0[2]
 	for i,p1 in inext,v do
-		local x1,y1=aspect_point(p1[1],p1[2])
+		local x1,y1=p1[1],p1[2]
 		local _x1,_y1=x1,y1
 		if(y0>y1) x0,y0,x1,y1=x1,y1,x0,y0
 		local dx=(x1-x0)/(y1-y0)
@@ -142,15 +131,12 @@ function polyfill(v,c)
 	end
 end
 
---fast triangle fill. not the best, but very few tokens and we're more concerned
+--[[fast triangle fill. not the best, but very few tokens and we're more concerned
 --with speed than quality.
 --sourced from https://www.lexaloffle.com/bbs/?pid=74564
 --@p01
 function p01_triangle_163(x0,y0,x1,y1,x2,y2,col)
 	color(col)
-	x0,y0=aspect_point(x0,y0)
-	x1,y1=aspect_point(x1,y1)
-	x2,y2=aspect_point(x2,y2)
 	if(y1<y0)x0,x1,y0,y1=x1,x0,y1,y0
 	if(y2<y0)x0,x2,y0,y2=x2,x0,y2,y0
 	if(y2<y1)x1,x2,y1,y2=x2,x1,y2,y1
@@ -169,3 +155,4 @@ function p01_trapeze_h(l,r,lt,rt,y0,y1)
 		r+=rt
 	end
 end
+]]

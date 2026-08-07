@@ -9,12 +9,13 @@ player={}
 
 function set_super_zap(active)
     game_super_zap_active=active
-    sfx(active and 37 or -1,3)
+    sfx(active and SFX_SUPERZAPPER or -1,3)
 end
 
 function kill_player(state,killer)
     if game_state!=G_ACTIVE and (game_state!=G_LEAVING or killer.type!=SPIKE) then return end
-    add_message(state==SNATCH and S_CAUGHT_YOU or killer.type==ESHOT and S_SHOT_YOU or S_FRIED_YOU)
+	if(game_bonus_stage)state,killer=ALIVE,player
+	add_message((game_bonus_stage or state==SNATCH)and S_CAUGHT_YOU or killer.type==ESHOT and S_SHOT_YOU or S_FRIED_YOU)
     player.state=state
     player.v_pos=0
     game_killedby=killer
@@ -22,10 +23,10 @@ function kill_player(state,killer)
     game_infinite_zap=false
     dead_message_timer=120
     game_state=G_DEADMESSAGE
-    if state==ZAP then
-        player.shape=zap_shape
-    else
-        player.pos=killer.pos
+	if state==ZAP then
+		player.shape=zap_shape
+	else
+		player.pos=killer.pos
     end
 end
 
@@ -34,7 +35,7 @@ function start_jump()
         game_jump_v = -2
         game_jump_camera_z = camera_z
         game_jumping = true
-        sfx(43)
+        sfx(SFX_JUMP)
     end
 end
 
@@ -149,11 +150,12 @@ function update_player(self)
         self.v_pos=0
     end
 
+	if not game_bonus_stage then
     -- handle player input for shooting
     if input_fire and game_shots_active < game_shot_limit
     and game_current_cooldown <= 0 then
             spawn_object(game_pu_laser and PLASER or PSHOT,self,1)
-            sfx(35)
+            sfx(SFX_PLAYER_SHOT)
             game_shots_active+=1
             local cooldown=game_pu_laser and (game_beastly and 4 or 2) or (game_beastly and 8 or game_shot_cooldown)
             game_current_cooldown=cooldown
@@ -165,6 +167,7 @@ function update_player(self)
         if game_super_zap_available>0 then add_message(S_EAT_ELECTRIC_DEATH) end
         game_super_zap_available-=1
     end
+	end
 
     -- update position and lane
     self.pos+=self.v_pos

@@ -18,7 +18,6 @@ function test_powerup(o)
         if game_pup_delay < 0 then
             game_pup_delay = game_pup_delay_max
             local p = spawn_object(POWERUP,o)
-            sfx(47)
             p.payload = pu_order[game_pu_order_index]
             
             game_pu_order_index=min(game_pu_order_index+1,#pu_order)
@@ -43,7 +42,7 @@ function grant_surprise()
             if o.team==ENEMY then o.active=false end
         end
     else
-        add_score(2000,player.pos,player.depth)
+        add_score(2000,player.pos,player.depth,5)
     end
 end
 
@@ -56,7 +55,6 @@ function grant_powerup(pu)
 		end
 		return
 	end
-    sfx(45)
 	if game_pu_droid_next then
 		pu=PU_DROID
 		game_pu_droid_next=false
@@ -66,19 +64,13 @@ function grant_powerup(pu)
         game_current_cooldown=min(game_current_cooldown,3)
         add_message(S_PARTICLE_LASER)
 	    elseif pu == PU_JUMP then
-            if not game_jump_help_shown then
-                add_message(S_JUMP_HELP)
-                game_jump_help_shown=true
-            else
-                add_message(S_JUMP_ENABLED)
-            end
-	        
+	        add_message(S_JUMP_ENABLED)
 	        game_pu_jump = true
 	elseif pu == PU_DROID then
 		if game_pu_droid then grant_surprise() return end
 		add_message(S_AI_DROID)
 		spawn_object(DROID,player,1)
-		sfx(44)
+		sfx(SFX_DROID)
 		game_pu_droid=true
     elseif pu == PU_SZ_WARP then
 		add(score_awards,{unpack_shape(V_EXCELLENT),player.pos,player.depth,150})
@@ -86,16 +78,12 @@ function grant_powerup(pu)
 		add_message(game_warp_powerups==1 and S_TWO_MORE_FOR_WARP
 			or game_warp_powerups==2 and S_ONE_MORE_FOR_WARP
 			or S_WARP_ENABLED)
-        if game_warp_powerups==3 then
-            game_warp_skips=game_stage<90 and 4 or 0
-            game_warp_chain=game_warp_skips>0
-        end
         set_super_zap(true)
 		if game_super_zap_available<0 then game_super_zap_available=0 end
     elseif pu == PU_SURPRISE then
 		grant_surprise()
     else
-        add_score(2000,player.pos,player.depth)
+        add_score(2000,player.pos,player.depth,5)
     end
 end
 
@@ -118,18 +106,28 @@ function update_pufx(self)
             set_affine(self.affine)
             for i=-2,2 do
                 local r = spawn_object(PART_RING,self)
-                r.offset = i * 8
-                r.parent = self
+				r.offset,r.parent,r.color=i*8,self,self.color
             end
         end
     elseif self.state == WEB then
         local dz=self.depth-player.depth
 
-        if lane(self.pos)==lane(player.pos) and dz>=0 and dz<=self.collision then
-            local e=spawn_object(EXPLOSION,self)
-            e.color,e.duration,e.end_scale=COL_CYCLE_COOL,49,3
-            grant_powerup(self.payload)
-            self.active=false
+		if lane(self.pos)==lane(player.pos) and dz>=0 and dz<=self.collision then
+			local e=spawn_object(EXPLOSION,self)
+			e.color,e.duration,e.end_scale=COL_CYCLE_COOL,49,3
+			sfx(SFX_POWERUP)
+			if game_bonus_stage then
+				bonus_powerups+=1
+				add_message(S_SPEED_UP)
+				messages[1][3]=40
+				game_warp_speed+=game_warp_speed/64
+				add_score(self.score*250,self.pos,self.depth,self.score)
+				if(bonus_powerups==13)bms(12)
+				if(bonus_powerups==26)begin_stage_exit()
+			else
+				grant_powerup(self.payload)
+			end
+			self.active=false
         elseif approach_edge(self) then
             self.active=false
         end
@@ -152,7 +150,7 @@ function draw_particle_ring(m,n,r,c)
 	for i=0,n-1 do
 		local a=i/n
 		local x,y=r*cos(a),r*sin(a)
-		apset(x*m[1]+y*m[2]+m[3],x*m[4]+y*m[5]+m[6],c)
+		pset(x*m[1]+y*m[2]+m[3],x*m[4]+y*m[5]+m[6],c)
 	end
 end
 

@@ -62,7 +62,7 @@ function update_camera(pos)
 	local px=lerp(a[1],b[1],t)
 	local py=lerp(a[2],b[2],t)
 
-	local follow=camera_view==1 and 0 or camera_follow
+	local follow=game_state==G_ENTER and 0 or camera_view==1 and 0 or camera_follow
 	local tx=px*follow
 	local ty=py*follow+(camera_view<2 and -1 or -2)
 
@@ -84,23 +84,3 @@ function update_camera(pos)
 end
 
 --$switch-compiler: none
-
--- aspect ratio corrections for when displaying on crt
--- the misterfpga core that runs pico8 can output to a crt with a 4:3 aspect ratio,
--- which it does with some scaling and stretching. this code allows me to correct for the
--- visual distortion that creates.
-
-display_aspect_x=1
-display_aspect_y=1
-
-function aspect_point(x,y)
-	return
-		64+(x-64)*display_aspect_x,
-		64+(y-64)*display_aspect_y
-end
-
-function set_crt_adjust()
-	poke(0x5f2c,tate_mode~=0 and tate_mode+132 or 0)
-	display_aspect_x=crt_adjust and 3/4 or 1
-	display_aspect_y=crt_adjust and 15/16 or 1
-end

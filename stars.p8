@@ -1,6 +1,7 @@
 -- patterned starfield generators
 
 stars={}
+blob={}
 star_colors={COL_LIGHT_GREY,COL_BLUE,COL_CYAN}
 star_speed=.01
 
@@ -64,7 +65,22 @@ function submit_stars()
 		local z=s.z+star_speed
 		local x=s.sx+(s.x-s.sx)*s.scale
 		local y=s.sy+(s.y-s.sy)*s.scale
-		aline(64+x/z*32,camera_cy+y/z*32,
+		line(64+x/z*32,camera_cy+y/z*32,
 			64+x/s.z*32,camera_cy+y/s.z*32,s.c)
+	end
+end
+
+function draw_blobs()
+	local t=game_world_tics/256
+	for n=12,244,4 do
+		blob[n]=sin(n/96+t)
+	end
+	for n=-110,238,4 do
+		blob[n+512]=sin(n/88-t*1.3)+sin(n/49+t*.6)
+	end
+	for y=6,122,4 do
+		for x=6,122,4 do
+			if abs(x-64)+abs(y-64)>30 and blob[x+y]+blob[512+x*2-y]>1 then rectfill(x-2,y-2,x+1,y+1,COL_BLACK) end
+		end
 	end
 end

@@ -21,7 +21,6 @@ function build_draw_list()
 end
 
 function draw_object(o)
-	if o.type==CLAW and game_state==G_WARP and game_warp_chain then return end
 	if o.type==SPIKE then draw_spike(o) return end
 	local particles=o.type==EXPLOSION or o.type==PART_RING
 		or o.type==POWERUP and o.state==SPAWN
@@ -43,12 +42,14 @@ function draw_object(o)
 	mul_affine(scratch_mat,scratch_mat,o.affine)
 	if particles then draw_explosion(o,scratch_mat) return end
 
-	if o.type==UFO and o.cross>=49 then
-		draw_zap(o.pos,o.depth,o.pos,160)
+	if o.type==UFO and o.cross>=49 or o.zap then
+		draw_zap(o.pos,o.depth,o.pos,o.zap and -24 or 160)
 	end
 
-	--local fade=o.type==CLAW and game_state==G_ENTER and o.depth<0
-	--if(fade)fillp(~(0xffff<<min(16,-o.depth/5)),true)
+	local fade=o.type==CLAW and game_bonus_stage and
+		(game_state==G_ENTER and (zoom_start_tic-game_world_tics+120)/7.5
+		or game_state==G_DEADMESSAGE and player.depth/10)
+	if(fade)fillp(~(0xffff<<mid(0,fade,16)),true)
 	if o.type==BEAST then
 		-- draw horns first so neither horn's root wins the overlap
 		for i=2,o.health do gpu_draw(o.shapes[i],scratch_mat) end
@@ -56,7 +57,7 @@ function draw_object(o)
 	else
 	    gpu_draw(s,scratch_mat)
 	end
-	--if(fade)fillp()
+	if(fade)fillp()
 end
 
 --
@@ -144,15 +145,15 @@ end
 --$switch-compiler: parens8
 
 function update_stage_exit(self)
+	if(game_bonus_stage and oneup_timer!=0)return
     if game_state==G_LEAVING then
         self.depth += game_exit_speed
         camera_z += game_exit_speed
         game_exit_speed += 0x0.0400
 
-        if self.depth >= 160 then
-            self.depth = 160
-            game_warp_speed = game_warp_chain and 4 or 0
-            game_state = G_WARP
+		if self.depth >= 160 then
+			self.depth = 160
+			game_state = G_WARP
         end
     elseif game_state==G_WARP then
         self.depth += game_exit_speed+game_warp_speed
@@ -160,9 +161,8 @@ function update_stage_exit(self)
         game_exit_speed += 0x0.0400
         game_warp_speed += 0x0.1000
 
-        local target=game_warp_chain and 600 or 2000
-        if self.depth >= target then
-            self.depth = target
+		if self.depth >= 2000 then
+			self.depth = 2000
             game_stage_transition_complete = true
         end
     end
