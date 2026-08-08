@@ -65,7 +65,7 @@ function update_enemy(self)
 				local zap=phase>=5 and phase<=9
 				self.zap=game_bonus_stage and zap
 				lane_effects[lane(self.pos)]=zap and COL_CYCLE_COOL or COL_WHITE
-				if zap and phase==7 and lane(player.pos)==lane(self.pos) then
+				if zap and phase==7 and lane(player.pos)==lane(self.pos) and player.depth >=0 then
 					kill_player(ZAP,self)
 				end
 			end

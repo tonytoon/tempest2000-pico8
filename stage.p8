@@ -171,7 +171,9 @@ function init_stage_preview()
 end
 
 function restart_stage_after_death()
-	game_lives-=1
+	if not game_bonus_stage then
+		game_lives-=1
+	end
 	if game_bonus_stage then
 		game_stage+=1
 		game_bonus_stage=false
