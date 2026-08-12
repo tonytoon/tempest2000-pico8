@@ -37,18 +37,17 @@ menu_selection=1
 --   bits 1-4   mouse sensitivity (0-15)
 --   bits 5-8   mouse max lanes (0-15)
 --   bits 9-11  mouse jump (0-7)
---   bit 13     web outline visible
--- dget(47)/dset(47) is beastly high stage (0-99), kept unpacked to avoid bit-shift bugs
+-- dget(47)/dset(47): bits 0-6 beastly high stage (0-99), bit 7 game spinner mode
 -- dget(48)/dset(48) is the last viewed whatsnew version
 
 --$switch-compiler: parens8
 
 function reset_settings()
 	mouse_opts={false,3,9,0}
-	game_outline_visible=true
 	game_regular_high_stage=1
 	game_beastly_high_stage=1
 	game_beastly_unlocked=false
+	game_spinner_mode=false
 end
 reset_settings()
 
@@ -66,9 +65,10 @@ function load_and_init_data()
 	p=dget(6)
 	if p~=0 then
 		mouse_opts={(p&1)>0,p>>1&15,p>>5&15,p>>9&7}
-		game_outline_visible=(p&0x2000)>0
 	end
-	game_beastly_high_stage=mid(1,dget(47),game_stage_max)
+	p=dget(47)
+	game_beastly_high_stage=mid(1,p&127,game_stage_max)
+	game_spinner_mode=p>=128
 	if game_beastly_unlocked then
 		game_regular_high_stage=game_stage_max
 	end
@@ -85,9 +85,8 @@ function save_settings()
 	dset(6,(mouse_opts[1] and 1 or 0)
 		|mouse_opts[2]<<1
 		|mouse_opts[3]<<5
-		|mouse_opts[4]<<9
-		|(game_outline_visible and 0x2000 or 0))
-	dset(47,game_beastly_high_stage)
+		|mouse_opts[4]<<9)
+	dset(47,game_beastly_high_stage|(game_spinner_mode and 128 or 0))
 end
 
 function reset_data()
@@ -160,8 +159,9 @@ function draw_hud()
 		game_yes_timer-=1
 	end
 
-	print("score:"..tostr(game_score,2),1,1,COL_GREY)
-	print("score:"..tostr(game_score,2),0,0,COL_WHITE)
+	local s="score:"..tostr(game_score,2)
+	print(s,1,1,COL_GREY)
+	print(s,0,0,COL_WHITE)
 
 	local wc = game_warp_powerups >= 3 and COL_CYCLE_HOT or COL_GREEN
 	print("warp:",1,9,COL_GREY)
@@ -170,8 +170,9 @@ function draw_hud()
 		x=print(chr(143),x,8,wc)
 	end
 
-	print("lives:"..game_lives,97,1,COL_GREY)
-	print("lives:"..game_lives,96,0,COL_WHITE)
+	s="lives:"..game_lives
+	print(s,97,1,COL_GREY)
+	print(s,96,0,COL_WHITE)
 
 	print(game_bonus_stage and "????" or 'stage:'..game_stage,96,8,COL_WHITE)
 	if game_bonus_stage then
@@ -368,14 +369,13 @@ function _update60()
 end
 
 function draw_menu(text,y)
-	y=y or 72
 	local menu_text=split(text,game_menu==M_UPDATE and "|" or ",")
 	local x=(game_menu==M_UPDATE and 4 or 24)+menu_x
 	for i=1,#menu_text do
 		local s=menu_text[i]
 		if game_menu==M_OPTIONS and i<6 then
 			s..=" "..(i==1 and (mouse_opts[1] and "on" or "off")
-				or i==5 and (game_outline_visible and "on" or "off")
+				or i==5 and (game_spinner_mode and "on" or "off")
 				or i<4 and ((mouse_opts[i]+1)/4)
 				or mouse_opts[i]>0 and mouse_opts[i]*10 or "off")
 		end
@@ -396,22 +396,18 @@ function draw_scores()
 			local n=hsn[(i-1)*8+j]
 			s..=n>0 and chr(64+n) or " "
 		end
-		local y=22+i*12
-		gpu_text(tostr(i),0,y+3,1,nil,nil,nil,6)
-		gpu_text(s,18,y+3,1,nil,nil,nil,6)
-		gpu_text(tostr(hs[i],2),76,y+3,1,nil,nil,nil,6)
+		local y=25+i*12
+		gpu_text(tostr(i),0,y,1,nil,nil,nil,6)
+		gpu_text(s,18,y,1,nil,nil,nil,6)
+		gpu_text(tostr(hs[i],2),76,y,1,nil,nil,nil,6)
 	end
 	if hs_pos then
-		local cursor_x=18+(hs_char-1)*4
-		local cursor_y=23+hs_pos*12+6
-		print("^",cursor_x,cursor_y)
+		print("^",18+(hs_char-1)*4,29+hs_pos*12)
 	end
 end
 
 function draw_spokes()
-	if game_outline_visible then
-		gpu_draw(web_spokes)
-	end
+	gpu_draw(web_spokes)
 end
 
 function draw_stage_select_preview()

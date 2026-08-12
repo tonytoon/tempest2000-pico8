@@ -52,7 +52,6 @@ function update_view()
 end
 
 function draw_web()
-	if not game_outline_visible then return end
 	gpu_draw(near_shape)
 	gpu_draw(far_shape)
 	web_spokes.cmds[1][2]=oneup_timer>0 and 15 or COL_WEB_SPOKES

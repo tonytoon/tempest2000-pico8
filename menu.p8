@@ -57,10 +57,10 @@ end
 
 function menu_items()
 	if game_menu==M_MAIN then
-		return game_beastly_unlocked and "start game,beastly game,options,whatsnew"
-			or "start game,options,whatsnew"
+		return game_beastly_unlocked and "start,beastly game,options,whatsnew"
+			or "start,options,whatsnew"
 	elseif game_menu==M_OPTIONS then
-		return "mouse,sensitivity,max lanes,flick jump,web outline,data"
+		return "mouse,sens,lane,jump,spin,data"
 	elseif game_menu==M_DATA then
 		return "high scores,reset data"
 	elseif game_menu==M_UPDATE then
@@ -88,19 +88,18 @@ function menu_move(accept)
 		end
 		if btnp(0) or btnp(1) or accept then
 			if(menu_selection==6)return
-			local d=btnp(0) and -1 or 1
-			if menu_selection==1 then
+			local i=menu_selection
+			if i==1 then
 				mouse_opts[1]=not mouse_opts[1]
 				poke(0x5f2d,mouse_opts[1] and 5 or 0)
-			elseif menu_selection==5 then
-				game_outline_visible=not game_outline_visible
-			else
-				local i=menu_selection
+			elseif i<5 then
+				local d=btnp(0) and -1 or 1
 				mouse_opts[i]=(mouse_opts[i]+d)%(i<4 and 16 or 6)
+			else
+				game_spinner_mode=not game_spinner_mode
 			end
 			save_settings()
 		end
-		return
 	end
 	if v!=0 then
 		local n=#split(menu_items())

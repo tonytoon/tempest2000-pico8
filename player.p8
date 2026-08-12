@@ -134,6 +134,8 @@ function update_player(self)
     if input_mouse_dx!=0 then
 		local m=(mouse_opts[3]+1)/4
         self.v_pos=mid(-m,-input_mouse_dx*(mouse_opts[2]+1)/256,m)
+	elseif game_spinner_mode then
+		self.v_pos=input_dir*player_maxvel
     elseif input_dir == -1 then
             if self.v_pos>0 then
                 self.v_pos=0

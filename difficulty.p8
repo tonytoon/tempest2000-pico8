@@ -55,10 +55,6 @@ function stage_difficulty_for(stage,beastly)
 	values.flipper_pause=beastly and 1 or flipper_pause_for_stage(stage)
 	values.fuse_cross_delay=beastly and 1 or fuse_cross_delay_for_stage(stage)
 	values.pulsar_deadliness=pulsar_deadliness_for_stage(stage)
-	values.wave_superflipper_chance=wave_superflipper_chance(stage)
-	values.super_spike_chance=super_spike_chance(stage)
-	values.tanker_superflip_chance=tanker_superflip_chance(stage)
-	values.superflipper3_chance=superflipper3_chance(stage)
 	return values
 end
 
