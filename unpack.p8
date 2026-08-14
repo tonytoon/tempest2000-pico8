@@ -1,3 +1,6 @@
+-- packed-data decoding is limited to setup and infrequent message lookup
+--$switch-compiler: parens8
+
 function unpack_addr(addr)
 	addr+=1
 	if @addr==0 then
@@ -116,3 +119,5 @@ function unpack_web_meta(addr)
 
 	return meta
 end
+
+--$switch-compiler: none

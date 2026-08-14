@@ -47,4 +47,4 @@ data=SPEED UP
 [too_slow]
 data=TOO SLOW
 [update]
-data=REMOVED CRT ADJUST\nADDED BONUS STAGE\nPERFORMANCE IMPROVEMENTS
+data=gsg spinner compatibility\nsimple gfx toggle

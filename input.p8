@@ -12,8 +12,8 @@ function get_input()
 	
 	if btn(3)
 		or (mouse_buttons&4)!=0
-		or mouse_opts[1] and mouse_opts[4]>0
-		and abs(stat(39))>=mouse_opts[4]*10 then
+		or mouse_opts[1] and mouse_opts[3]>0
+		and abs(stat(39))>=mouse_opts[3]*10 then
 			start_jump()
 	end
 

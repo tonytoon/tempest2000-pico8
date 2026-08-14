@@ -44,7 +44,7 @@
 --[[const]] M_MAIN = 1
 --[[const]] M_STAGE_SELECT = 2
 --[[const]] M_OPTIONS = 3
---[[const]] M_DATA = 4
+--[[const]] M_INPUT = 4
 --[[const]] M_UPDATE = 5
 
 -- object states

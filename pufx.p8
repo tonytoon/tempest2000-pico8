@@ -58,6 +58,7 @@ function grant_powerup(pu)
 	if game_pu_droid_next then
 		pu=PU_DROID
 		game_pu_droid_next=false
+		game_pu_order_index=1
 	end
     if pu == PU_LASER then
         game_pu_laser = true
@@ -67,13 +68,17 @@ function grant_powerup(pu)
 	        add_message(S_JUMP_ENABLED)
 	        game_pu_jump = true
 	elseif pu == PU_DROID then
-		if game_pu_droid then grant_surprise() return end
+		if game_pu_droid then
+			game_pu_order_index+=1
+			grant_powerup(PU_SZ_WARP)
+			return
+		end
 		add_message(S_AI_DROID)
 		spawn_object(DROID,player,1)
 		sfx(SFX_DROID)
 		game_pu_droid=true
     elseif pu == PU_SZ_WARP then
-		add(score_awards,{unpack_shape(V_EXCELLENT),player.pos,player.depth,150})
+		add(score_awards,{7,player.pos,player.depth,150})
 	    game_warp_powerups+=1
 		add_message(game_warp_powerups==1 and S_TWO_MORE_FOR_WARP
 			or game_warp_powerups==2 and S_ONE_MORE_FOR_WARP
@@ -122,7 +127,6 @@ function update_pufx(self)
 				messages[1][3]=40
 				game_warp_speed+=game_warp_speed/64
 				add_score(self.score*250,self.pos,self.depth,self.score)
-				if(bonus_powerups==13)bms(12)
 				if(bonus_powerups==26)begin_stage_exit()
 			else
 				grant_powerup(self.payload)

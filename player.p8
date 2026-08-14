@@ -132,10 +132,9 @@ function update_player(self)
 
     -- handle player input for movement
     if input_mouse_dx!=0 then
-		local m=(mouse_opts[3]+1)/4
-        self.v_pos=mid(-m,-input_mouse_dx*(mouse_opts[2]+1)/256,m)
-	elseif game_spinner_mode then
-		self.v_pos=input_dir*player_maxvel
+		self.v_pos=mid(-1,-input_mouse_dx*(mouse_opts[2]+1)/256,1)
+	elseif mouse_opts[4] then
+		self.v_pos=input_dir*player_maxvel*(mouse_opts[5]+1)/4
     elseif input_dir == -1 then
             if self.v_pos>0 then
                 self.v_pos=0

@@ -22,8 +22,7 @@ function update_menu_state(accept)
 		if abs(menu_x)>=128 then
 			if menu_target==0 then
 				menu_x=0
-				game_score+=stage_select_bonus(game_stage)
-				game_extends_granted=game_score/0x0.4e20\1+1
+				game_start_bonus=stage_select_bonus(game_stage)
 				init_stage(game_stage,true)
 			else
 				game_menu=menu_target
@@ -48,7 +47,7 @@ function update_menu_state(accept)
 	menu_move(accept)
 
 	if btnp(5) and game_menu!=M_MAIN then
-		menu_target=game_menu==M_DATA and M_OPTIONS or M_MAIN
+		menu_target=game_menu==M_INPUT and M_OPTIONS or M_MAIN
 		menu_step=16
 	elseif accept then
 		menu_accept()
@@ -57,12 +56,11 @@ end
 
 function menu_items()
 	if game_menu==M_MAIN then
-		return game_beastly_unlocked and "start,beastly game,options,whatsnew"
-			or "start,options,whatsnew"
+		return "start,"..(game_beastly_unlocked and"beastly game,"or"").."options,whatsnew"
 	elseif game_menu==M_OPTIONS then
-		return "mouse,sens,lane,jump,spin,data"
-	elseif game_menu==M_DATA then
-		return "high scores,reset data"
+		return "simple gfx,input,high scores,reset data"
+	elseif game_menu==M_INPUT then
+		return "mouse,sensitivity,flick jump,gsg spinner,sensitivity"
 	elseif game_menu==M_UPDATE then
 		return get_message(S_UPDATE)
 	end
@@ -78,37 +76,33 @@ function menu_move(accept)
 		if(d!=0)init_stage_preview()
 		return
 	end
-	if game_menu==M_OPTIONS then
+	if game_menu==M_OPTIONS and menu_selection==1 and (btnp(0)or btnp(1)or accept)then
+		simple_gfx=not simple_gfx
+		save_settings()
+	elseif game_menu==M_INPUT then
 		if v!=0 then
-			menu_selection=(menu_selection+v-1)%6+1
-			if not mouse_opts[1] and menu_selection>1 and menu_selection<5 then
-				menu_selection=v>0 and 5 or 1
-			end
-			return
-		end
-		if btnp(0) or btnp(1) or accept then
-			if(menu_selection==6)return
+			repeat menu_selection=(menu_selection+v-1)%5+1
+			until (mouse_opts[1]or menu_selection<2or menu_selection>3)
+			and(mouse_opts[4]or menu_selection!=5)
+		elseif btnp(0) or btnp(1) or accept then
+			local d=btnp(0) and -1 or 1
 			local i=menu_selection
-			if i==1 then
-				mouse_opts[1]=not mouse_opts[1]
-				poke(0x5f2d,mouse_opts[1] and 5 or 0)
-			elseif i<5 then
-				local d=btnp(0) and -1 or 1
-				mouse_opts[i]=(mouse_opts[i]+d)%(i<4 and 16 or 6)
+			if i==1 or i==4 then
+				mouse_opts[i]=not mouse_opts[i]
+				if(i==1)poke(0x5f2d,mouse_opts[1]and 5or 0)
 			else
-				game_spinner_mode=not game_spinner_mode
+				mouse_opts[i]=(mouse_opts[i]+d)%(i==3and 6or i==5and 8or 16)
 			end
 			save_settings()
 		end
-	end
-	if v!=0 then
+	elseif v!=0 then
 		local n=#split(menu_items())
 		menu_selection=(menu_selection+v-1)%n+1
 	end
 end
 
 function menu_accept()
-	if game_menu==M_DATA and menu_selection==2 then
+	if game_menu==M_OPTIONS and menu_selection==4 then
 		reset_confirm=true
 		return
 	end
@@ -120,10 +114,9 @@ function menu_accept()
 			or menu_selection==2+b and M_OPTIONS or M_UPDATE
 	elseif game_menu==M_STAGE_SELECT then
 		menu_target=0
-	elseif game_menu==M_OPTIONS and menu_selection==6 then
-		menu_target=M_DATA
-	elseif game_menu==M_DATA then
-		data_scores=draw_scores
+	elseif game_menu==M_OPTIONS then
+		menu_target=menu_selection==2and M_INPUT
+		if(menu_selection==3)data_scores=draw_scores
 	elseif game_menu==M_UPDATE then
 		menu_target=M_MAIN
 	end
@@ -153,7 +146,7 @@ function draw_menu_state()
 		end
 	end
 
-	draw_menu(menu_items(),game_menu==M_MAIN and 80 or game_menu==M_STAGE_SELECT and 88 or 56)
+	draw_menu(menu_items(),game_menu==M_MAIN and 80or game_menu==M_STAGE_SELECT and 88or 56)
 	print("\142 to select \151 to return",12,122,COL_WHITE)
 end
 

@@ -11,8 +11,12 @@ function init_shapes()
 
 	spawn_data[MIRROR].ref_shape=unpack_shape(V_REFSHOT)
 	zap_shape=unpack_shape(V_ZAP)
-	score_shapes={}
-	for i=0,5 do add(score_shapes,unpack_shape(V_SCORE_250+i)) end
+	score_digits={}
+	for i=1,5 do
+		score_digits[sub("01257",i,i)]=unpack_shape(V_SCORE_0+i-1)
+	end
+	score_digits[6]=unpack_shape(V_SCORE_1UP)
+	score_digits[7]=unpack_shape(V_EXCELLENT)
 	yes_shape=unpack_shape(V_YES)
 end
 

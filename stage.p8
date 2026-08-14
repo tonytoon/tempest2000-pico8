@@ -49,7 +49,7 @@ function init_game()
 	game_yes_timer=0
 	game_warp_flash=0
 	game_infinite_zap=false
-	game_music_playing=nil
+	game_music_playing,hs_char=nil
 end
 
 function init_stage(stage,from_preview,web_id)
@@ -114,17 +114,11 @@ end
 bonus_palettes={{141,130,2,11},{132,128,4,12},{131,3,139,14},{1,129,130,9},{131,129,5,8},{133,0,5,12},{130,128,132,11}}
 bonus_webs={V_WEB5,V_WEB11,V_WEB18,V_WEB24,V_WEB27,V_WEB36,V_WEB29}
 
-function bms(s)
-	poke(12745,s*64-710)
-	for i=0,4 do poke(15925+i*204,s) end
-end
-
 function init_bonus_stage()
 	bonus_web_index=bonus_web_index%#bonus_webs+1
 	game_bonus_target=min(game_stage+5,game_stage_max)
 	game_bonus_stage=true
 	init_stage(game_stage+1,nil,bonus_webs[bonus_web_index])
-	bms(14)
 	music(46)
 	game_music_playing=nil
 	local p=bonus_palettes[(game_stage-1)\16%#bonus_palettes+1]
@@ -189,6 +183,11 @@ end
 
 function advance_warp_stage()
 	game_stage_transition_complete=false
+	if game_start_bonus then
+		game_score+=game_start_bonus
+		game_extends_granted=game_score/0x0.4e20\1+1
+		game_start_bonus=nil
+	end
 	if game_stage==game_stage_max then
 		begin_finish_screen()
 		return

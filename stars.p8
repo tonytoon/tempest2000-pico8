@@ -1,5 +1,8 @@
 -- patterned starfield generators
 
+-- generators and star allocation run only when a stage is initialized
+--$switch-compiler: parens8
+
 stars={}
 blob={}
 star_colors={COL_LIGHT_GREY,COL_BLUE,COL_CYAN}
@@ -41,6 +44,8 @@ function init_stars(generator)
 		sx=x*q,sy=y*q}
 	end
 end
+
+--$switch-compiler: none
 
 function update_stars()
 	star_speed=.01+game_warp_speed/32

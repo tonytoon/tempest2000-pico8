@@ -31,7 +31,7 @@ function draw_object(o)
 
 	if not x then return end
 	if o.state==APPROACH then
-		apset(x,y,s.cmds[1][2])
+		pset(x,y,s.cmds[1][2])
 		return
 	end
 

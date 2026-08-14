@@ -7,32 +7,29 @@
 -- gpu_draw() is the main rendering function. it takes a shape and an optional affine
 -- transform matrix. the shape is a table with a vertices array and a commands array.
 -- commands take parameters which are evaluated either immediately (cmd_col) or as a
--- vertex index into the shape's vertices array (cmd_pnt, cmd_opn, cmd_cls,
--- cmd_pol, cmd_tri).
+-- vertex index into the shape's vertices array
 
 -- commands
 --[[const]] cmd_col  = -1 -- set color
 --[[const]] cmd_pnt  = -3 -- draw point at vertex
 --[[const]] cmd_opn  = -4 -- draw open polyline through vertices
 --[[const]] cmd_cls  = -5 -- draw closed polygon through vertices
---[[const]] cmd_pol  = -7 -- draw shaded polygon composed of vertices
---[[const]] cmd_tri  = -8 -- draw filled triangle through three vertices
 
 -- draw a shape to screen with an optional affine transform matrix
-function gpu_draw(shape,m)
+function gpu_draw(shape,m,outline)
 	m=m or identity_mat
 	local out={}
 	for cmd in all(shape.cmds) do
 		local op=cmd[1]
 		if op==cmd_col then
-			col=cmd[2]
+			col=outline and COL_GREEN or cmd[2]
 		elseif op==cmd_pnt then
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
 				pset(out[1],out[2],col)
 			end
-		elseif op==cmd_opn or op==cmd_cls then
+		elseif op==cmd_opn or op==cmd_cls or outline and op<cmd_cls then
 			local px,py,fx,fy
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
@@ -45,8 +42,8 @@ function gpu_draw(shape,m)
 				end
 				px,py=x,y
 			end
-			if op==cmd_cls then line(px,py,fx,fy,col) end
-		elseif op==cmd_tri or op==cmd_pol then
+			if op!=cmd_opn then line(px,py,fx,fy,col) end
+		elseif op<cmd_cls then
 			local vbuf = {}
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
@@ -88,17 +85,6 @@ function draw_zap(p,d,p2,d2)
 	end
 	line(x,y,x2,y2,COL_CYCLE_HOT)
 end
-
--- now unused aspect corrected primitives
-
-function aline(x1,y1,x2,y2,c)
-	line(x1,y1,x2,y2,c)
-end
-
-function apset(x,y,c)
-	pset(x,y,c)
-end
-
 
 -- polyfill with subpixel accuracy. used for objects such as lanes and shapes that are not
 -- broken down into triangles. not optimal for triangles - that's why we have the second

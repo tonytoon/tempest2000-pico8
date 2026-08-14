@@ -8,7 +8,6 @@ pulsar_deadliness=9
 
 -- i would normally make extensive use of callbacks and a more nuanced update loop
 -- but crammed as much as i could into a big update loop to reduce token use
---$switch-compiler: parens8
 function update_enemy(self)
 	-- update animations
 	if self.type==SPIKE then
@@ -224,7 +223,6 @@ function update_ufo(self)
         self.cross=(self.cross+1)%81
     end
 end
---$switch-compiler: none
 
 function bonus_score()return 250+flr(rnd(3))*250 end
 
