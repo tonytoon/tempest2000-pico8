@@ -59,7 +59,6 @@ end
 
 function draw_bonus_web(scroll)
 	local v=game_active_web.near_verts
-	local draw=simple_gfx and draw_quad or polyfill
 	local zmax=camera_z+360
 	local z=camera_z+camera_near
 	local nz=min(z+32-scroll%32,zmax)
@@ -76,7 +75,7 @@ function draw_bonus_web(scroll)
 			local j=i%#v+1
 			local a,b,c,d=nbuf[i],nbuf[j],fbuf[j],fbuf[i]
 			local col=(i+row)%2==0 and COL_WEB2 or COL_WEB1
-			draw({a,b,c,d},col)
+			polyfill({a,b,c,d},col)
 		end
 		nbuf,fbuf=fbuf,nbuf
 		z,nz=nz,min(nz+32,zmax)

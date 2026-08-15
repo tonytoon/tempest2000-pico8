@@ -31,7 +31,7 @@ palettes={
 }
 
 function init_palette(p)
-	web_fill=p[13]+p[14]>0
+	web_fill=p!=palettes[7]
 	for i=0,13 do pal(i,p[i+1],1) end
 end
 

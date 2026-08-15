@@ -33,7 +33,7 @@ data=SUPERZAPPER\nRECHARGE
 [wormhole_discovered]
 data=WORMHOLE\nDISCOVERED  
 [complete_regular]
-data=|      AMAZING!|  YOU FINISHED ALL| NINETY-NINE STAGES!|  I GUESS YOU WANT|   A SECOND LOOP!|   GET READY FOR|  A REAL CHALLENGE!||BEASTLY MODE UNLOCKED|||  PRESS ANY BUTTON|    TO CONTINUE
+data=|      AMAZING!|  YOU FINISHED ALL| NINETY-NINE STAGES!|||   GET READY FOR|  A REAL CHALLENGE!||BEASTLY MODE UNLOCKED|||  PRESS ANY BUTTON|    TO CONTINUE
 [complete_beastly]
 data=|BEASTLY RUN COMPLETE!||  A WINNER IS YOU!| COME ON FHQWHGADS!|   GAME IS OVER!|I GUESS YOU HAVE TO|WRITE YOUR OWN NOW!||   TEMPEST WILL|    NEVER DIE!|   ALL THE LOVE| TO DAVE AND JEFF|     AND YOU!
 [title_credit_1]
@@ -47,4 +47,8 @@ data=SPEED UP
 [too_slow]
 data=TOO SLOW
 [update]
-data=gsg spinner compatibility\nsimple gfx toggle
+data=gsg spinner compatibility
+[cam_help]
+data=PRESS UP TO\nCHANGE CAMERA
+[jump_help]
+data=PRESS DOWN TO JUMP

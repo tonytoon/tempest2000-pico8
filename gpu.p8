@@ -16,20 +16,20 @@
 --[[const]] cmd_cls  = -5 -- draw closed polygon through vertices
 
 -- draw a shape to screen with an optional affine transform matrix
-function gpu_draw(shape,m,outline)
+function gpu_draw(shape,m)
 	m=m or identity_mat
 	local out={}
 	for cmd in all(shape.cmds) do
 		local op=cmd[1]
 		if op==cmd_col then
-			col=outline and COL_GREEN or cmd[2]
+			col=cmd[2]
 		elseif op==cmd_pnt then
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]
 				apply_affine(m,v,out)
 				pset(out[1],out[2],col)
 			end
-		elseif op==cmd_opn or op==cmd_cls or outline and op<cmd_cls then
+		elseif op==cmd_opn or op==cmd_cls then
 			local px,py,fx,fy
 			for i=2,#cmd do
 				local v=shape.verts[cmd[i]]

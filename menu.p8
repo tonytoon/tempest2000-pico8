@@ -22,6 +22,7 @@ function update_menu_state(accept)
 		if abs(menu_x)>=128 then
 			if menu_target==0 then
 				menu_x=0
+				game_pure=game_stage==1
 				game_start_bonus=stage_select_bonus(game_stage)
 				init_stage(game_stage,true)
 			else
@@ -47,7 +48,7 @@ function update_menu_state(accept)
 	menu_move(accept)
 
 	if btnp(5) and game_menu!=M_MAIN then
-		menu_target=game_menu==M_INPUT and M_OPTIONS or M_MAIN
+		menu_target=M_MAIN
 		menu_step=16
 	elseif accept then
 		menu_accept()
@@ -58,13 +59,11 @@ function menu_items()
 	if game_menu==M_MAIN then
 		return "start,"..(game_beastly_unlocked and"beastly game,"or"").."options,whatsnew"
 	elseif game_menu==M_OPTIONS then
-		return "simple gfx,input,high scores,reset data"
-	elseif game_menu==M_INPUT then
-		return "mouse,sensitivity,flick jump,gsg spinner,sensitivity"
+		return "mouse,sensitivity,flick jump,gsg spinner,sensitivity,high scores,reset data"
 	elseif game_menu==M_UPDATE then
 		return get_message(S_UPDATE)
 	end
-	return "stage: "..game_stage.."  bonus: "..tostr(stage_select_bonus(game_stage),2)..",up/down: stage +/- 1,left/right: stage +/- 10"
+	return "stage: "..game_stage.."  "..(game_stage==1and"pure mode"or"bonus: "..tostr(stage_select_bonus(game_stage),2))..",up/down: stage +/- 1,left/right: stage +/- 10"
 end
 
 function menu_move(accept)
@@ -76,15 +75,12 @@ function menu_move(accept)
 		if(d!=0)init_stage_preview()
 		return
 	end
-	if game_menu==M_OPTIONS and menu_selection==1 and (btnp(0)or btnp(1)or accept)then
-		simple_gfx=not simple_gfx
-		save_settings()
-	elseif game_menu==M_INPUT then
+	if game_menu==M_OPTIONS then
 		if v!=0 then
-			repeat menu_selection=(menu_selection+v-1)%5+1
+			repeat menu_selection=(menu_selection+v-1)%7+1
 			until (mouse_opts[1]or menu_selection<2or menu_selection>3)
 			and(mouse_opts[4]or menu_selection!=5)
-		elseif btnp(0) or btnp(1) or accept then
+		elseif menu_selection<6 and (btnp(0) or btnp(1) or accept) then
 			local d=btnp(0) and -1 or 1
 			local i=menu_selection
 			if i==1 or i==4 then
@@ -102,7 +98,7 @@ function menu_move(accept)
 end
 
 function menu_accept()
-	if game_menu==M_OPTIONS and menu_selection==4 then
+	if game_menu==M_OPTIONS and menu_selection==7 then
 		reset_confirm=true
 		return
 	end
@@ -115,8 +111,7 @@ function menu_accept()
 	elseif game_menu==M_STAGE_SELECT then
 		menu_target=0
 	elseif game_menu==M_OPTIONS then
-		menu_target=menu_selection==2and M_INPUT
-		if(menu_selection==3)data_scores=draw_scores
+		if(menu_selection==6)data_scores=draw_scores
 	elseif game_menu==M_UPDATE then
 		menu_target=M_MAIN
 	end

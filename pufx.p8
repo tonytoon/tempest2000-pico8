@@ -22,10 +22,10 @@ function test_powerup(o)
             
             game_pu_order_index=min(game_pu_order_index+1,#pu_order)
             
-            if not game_pu_noted then
-                game_pu_noted = true
-                add_message(S_COLLECT_POWERUPS)
-            end
+			if not game_pu_warp then
+				game_pu_warp=true
+				add_message(S_COLLECT_POWERUPS)
+			end
         return true
     end
     return false
@@ -65,7 +65,8 @@ function grant_powerup(pu)
         game_current_cooldown=min(game_current_cooldown,3)
         add_message(S_PARTICLE_LASER)
 	    elseif pu == PU_JUMP then
-	        add_message(S_JUMP_ENABLED)
+	        add_message(jump_msg or S_JUMP_HELP)
+			jump_msg=S_JUMP_ENABLED
 	        game_pu_jump = true
 	elseif pu == PU_DROID then
 		if game_pu_droid then
@@ -80,6 +81,7 @@ function grant_powerup(pu)
     elseif pu == PU_SZ_WARP then
 		add(score_awards,{7,player.pos,player.depth,150})
 	    game_warp_powerups+=1
+		game_pu_warp=2
 		add_message(game_warp_powerups==1 and S_TWO_MORE_FOR_WARP
 			or game_warp_powerups==2 and S_ONE_MORE_FOR_WARP
 			or S_WARP_ENABLED)

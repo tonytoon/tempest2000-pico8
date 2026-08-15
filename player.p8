@@ -66,9 +66,9 @@ function update_pshot(self)
                     o.hit = true
                     if not self.pierce then self.active=false end
                 else
-                    if o.type==BEAST then
-                        o.hit=self
-                        if not self.pierce and o.health>1 then self.active=false end
+					if o.type==BEAST then
+						o.hit=self
+						if o.health>1 then self.active=false end
                     elseif not o.invuln then
                         o.hit = true
                     end

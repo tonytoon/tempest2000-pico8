@@ -44,11 +44,9 @@ function init_game()
 	game_warp_powerups=0
 	game_bonus_stage=false
 	bonus_web_index=0
-	game_stage_difficulty={}
-	game_pu_droid_next=false
+	game_pu_droid_next,jump_msg=false
 	game_yes_timer=0
 	game_warp_flash=0
-	game_infinite_zap=false
 	game_music_playing,hs_char=nil
 end
 
@@ -72,7 +70,8 @@ function init_stage(stage,from_preview,web_id)
 		camera_x,camera_y,camera_z,camera_cy=0,-1,web_id and camera_view_z() or -160,64
 	end
 
-	game_pu_noted=false
+	-- false: tutorial pending; true: shown; 2: warp collected
+	game_pu_warp=false
 	game_pu_order_index=1
 	game_stage_difficulty=stage_difficulty_for(stage,game_beastly)
 	game_pup_delay_max=game_stage_difficulty.pup_delay_max
@@ -90,7 +89,7 @@ function init_stage(stage,from_preview,web_id)
 	game_pu_laser,game_pu_droid,game_pu_jump=false,false,false
 	game_super_zap_available=1
 	game_infinite_zap=false
-	if(stage>1)add_message(game_bonus_stage and S_WORMHOLE_DISCOVERED or S_SUPERZAPPER_RECHARGE,nil,24,nil,nil)
+	add_message(stage<2 and S_CAM_HELP or game_bonus_stage and S_WORMHOLE_DISCOVERED or S_SUPERZAPPER_RECHARGE,nil,24)
 	game_current_cooldown=0
 	game_jump_v=0
 	game_jump_camera_z=camera_z
@@ -167,6 +166,7 @@ end
 function restart_stage_after_death()
 	if not game_bonus_stage then
 		game_lives-=1
+		if(game_pu_warp==2)game_warp_powerups-=1
 	end
 	if game_bonus_stage then
 		game_stage+=1
@@ -182,7 +182,6 @@ function restart_stage_after_death()
 end
 
 function advance_warp_stage()
-	game_stage_transition_complete=false
 	if game_start_bonus then
 		game_score+=game_start_bonus
 		game_extends_granted=game_score/0x0.4e20\1+1

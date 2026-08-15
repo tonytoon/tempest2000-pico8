@@ -358,7 +358,7 @@ function flipper_flip(self)
         self.dir=self.dir
 			or towards_pos(self.pos,player.pos,game_active_web.closed)
         if self.super_run then self.dir=-self.dir end
-        self.flip_lane,self.web_flip=lane(self.pos),self.depth>0
+		self.flip_lane,self.web_flip=lane(self.pos+self.dir),self.depth>0
     end
 
     self.flip_frame+=1
